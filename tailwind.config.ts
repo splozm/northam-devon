@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        heading: ['Cormorant Garamond', 'Georgia', 'serif'],
+        body: ['Source Sans 3', 'Helvetica Neue', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,6 +61,23 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Custom Northam colours
+        coastal: {
+          deep: "hsl(var(--coastal-deep))",
+          mid: "hsl(var(--coastal-mid))",
+          light: "hsl(var(--coastal-light))",
+        },
+        sand: {
+          warm: "hsl(var(--sand-warm))",
+          light: "hsl(var(--sand-light))",
+        },
+        "sea-foam": "hsl(var(--sea-foam))",
+        // Event category colours
+        event: {
+          venue: "hsl(var(--event-venue))",
+          business: "hsl(var(--event-business))",
+          community: "hsl(var(--event-community))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,20 +86,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
