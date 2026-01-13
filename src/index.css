@@ -6,49 +6,49 @@
 
 @layer base {
   :root {
-    /* Base tokens (will be overridden by theme variants) */
-    --background: 45 25% 97%;
-    --foreground: 215 25% 15%;
+    /* Vibrant Devon - Default theme */
+    --background: 50 30% 97%;
+    --foreground: 200 30% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 200 30% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 200 30% 15%;
 
-    --primary: 200 60% 35%;
+    --primary: 175 65% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 40% 92%;
-    --secondary-foreground: 215 25% 20%;
+    --secondary: 50 50% 92%;
+    --secondary-foreground: 200 30% 20%;
 
-    --muted: 200 15% 92%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 50 20% 90%;
+    --muted-foreground: 200 15% 45%;
 
-    --accent: 175 45% 40%;
+    --accent: 15 80% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 200 20% 88%;
-    --input: 200 20% 88%;
-    --ring: 200 60% 35%;
+    --border: 50 25% 85%;
+    --input: 50 25% 85%;
+    --ring: 175 65% 40%;
 
     --radius: 0.5rem;
 
-    /* Event category colours */
-    --event-venue: 200 60% 35%;
-    --event-business: 145 45% 40%;
-    --event-community: 25 75% 55%;
+    /* Event category colours - Vibrant */
+    --event-venue: 175 55% 38%;
+    --event-business: 50 70% 45%;
+    --event-community: 15 80% 55%;
 
-    /* Custom Northam tokens */
-    --coastal-deep: 200 60% 25%;
-    --coastal-mid: 200 55% 45%;
-    --coastal-light: 195 50% 75%;
-    --sand-warm: 35 50% 85%;
-    --sand-light: 40 35% 94%;
-    --sea-foam: 175 35% 85%;
+    /* Custom Northam tokens - Vibrant Devon */
+    --coastal-deep: 180 55% 30%;
+    --coastal-mid: 175 55% 45%;
+    --coastal-light: 170 50% 70%;
+    --sand-warm: 45 55% 80%;
+    --sand-light: 50 40% 93%;
+    --sea-foam: 170 40% 82%;
 
     /* Typography */
     --font-heading: 'Cormorant Garamond', 'Georgia', serif;
