@@ -9,6 +9,8 @@ import Directory from "./pages/Directory";
 import ThingsToDo from "./pages/ThingsToDo";
 import Community from "./pages/Community";
 import History from "./pages/History";
+import BusinessPage from "./pages/BusinessPage";
+import LocalServices from "./pages/LocalServices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/events" element={<Events />} />
           <Route path="/directory" element={<Directory />} />
+          <Route path="/business/:slug" element={<BusinessPage />} />
+          <Route path="/local-services" element={<LocalServices />} />
           <Route path="/things-to-do" element={<ThingsToDo />} />
           <Route path="/community" element={<Community />} />
           <Route path="/history" element={<History />} />

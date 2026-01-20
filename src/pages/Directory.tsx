@@ -1,119 +1,179 @@
 import { useState } from "react";
-import { Search, Filter, MapPin, Phone, Globe, ChevronRight, Store, UtensilsCrossed, Bed, ShoppingBag, Wrench, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, MapPin, Phone, Globe, ChevronRight, Store, UtensilsCrossed, Scissors, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/layout/Layout";
 
-// Sample business data
-const allBusinesses = [
+// Full business pages - visual businesses with Instagram feeds
+const fullBusinesses = [
   {
-    id: 1,
+    id: "the-kingsley",
     name: "The Kingsley",
-    category: "pubs",
-    type: "Traditional Pub",
-    description: "Historic village pub serving real ales and home-cooked food in a welcoming atmosphere. Live music every Saturday.",
+    category: "food-drink",
+    type: "Traditional British Pub",
+    description: "Historic village pub serving real ales and home-cooked food. Live music every Saturday.",
     phone: "01237 123456",
-    website: "thekingsley.co.uk",
-    address: "Cross Street, Northam",
+    instagram: "thekingsleynortham",
+    address: "High Street, Northam",
+    hasInstagram: true,
   },
   {
-    id: 2,
+    id: "royal-george-inn",
+    name: "Royal George Inn",
+    category: "food-drink",
+    type: "Country Pub",
+    description: "17th century coaching inn with beer garden. Sunday roasts a speciality.",
+    phone: "01237 901234",
+    instagram: "royalgeorgeinn",
+    address: "Fore Street, Northam",
+    hasInstagram: true,
+  },
+  {
+    id: "sea-horse",
     name: "Sea Horse Fish & Chips",
-    category: "food",
+    category: "food-drink",
     type: "Takeaway",
     description: "Fresh, locally-caught fish and hand-cut chips since 1985. Award-winning battered cod.",
     phone: "01237 234567",
     address: "The Square, Northam",
+    hasInstagram: true,
   },
   {
-    id: 3,
+    id: "trattoria-bella",
     name: "Trattoria Bella",
-    category: "food",
+    category: "food-drink",
     type: "Italian Restaurant",
-    description: "Authentic Italian cuisine in a cosy setting. Fresh pasta made daily, extensive wine list.",
+    description: "Authentic Italian cuisine in a cosy setting. Fresh pasta made daily.",
     phone: "01237 345678",
-    website: "trattoriabella.co.uk",
+    instagram: "trattoriabella",
     address: "High Street, Northam",
+    hasInstagram: true,
   },
   {
-    id: 4,
-    name: "Northam B&B",
-    category: "accommodation",
-    type: "Bed & Breakfast",
-    description: "Charming B&B with sea views. Full English breakfast included. Dog-friendly rooms available.",
+    id: "the-coffee-cabin",
+    name: "The Coffee Cabin",
+    category: "food-drink",
+    type: "Café",
+    description: "Cosy café with locally roasted coffee, homemade cakes, and light lunches.",
     phone: "01237 456789",
-    website: "northambandb.co.uk",
-    address: "Fore Street, Northam",
-  },
-  {
-    id: 5,
-    name: "Coastal Crafts",
-    category: "shops",
-    type: "Gift Shop",
-    description: "Handmade gifts from local artisans. Pottery, jewellery, artwork, and Devon souvenirs.",
-    phone: "01237 567890",
+    instagram: "thecoffeecabinnortham",
     address: "Market Street, Northam",
+    hasInstagram: true,
   },
   {
-    id: 6,
-    name: "Green Thumb Garden Centre",
-    category: "shops",
-    type: "Garden Centre",
-    description: "Plants, seeds, and gardening supplies. Expert advice for Devon's coastal gardens.",
+    id: "sandymere",
+    name: "Sandymere",
+    category: "food-drink",
+    type: "Café & Takeaway",
+    description: "Beachside café at Northam Burrows. Ice cream, snacks, and stunning views.",
+    phone: "01237 567890",
+    instagram: "sandymere",
+    address: "Northam Burrows, Northam",
+    hasInstagram: true,
+  },
+  {
+    id: "the-pier-house",
+    name: "The Pier House",
+    category: "food-drink",
+    type: "Restaurant & Bar",
+    description: "Contemporary dining with spectacular views over the Taw-Torridge estuary.",
     phone: "01237 678901",
-    address: "Bideford Road, Northam",
+    instagram: "thepierhouseappledore",
+    address: "Marine Parade, Appledore",
+    hasInstagram: true,
   },
   {
-    id: 7,
-    name: "Northam Motors",
-    category: "services",
-    type: "Garage",
-    description: "Full MOT and servicing. Reliable repairs from a family-run business for over 30 years.",
-    phone: "01237 789012",
-    address: "Industrial Estate, Northam",
-  },
-  {
-    id: 8,
-    name: "The Wellness Room",
-    category: "health",
-    type: "Therapy Centre",
-    description: "Massage, reflexology, and holistic therapies. Helping you relax and recharge by the coast.",
-    phone: "01237 890123",
-    website: "wellnessroom.co.uk",
-    address: "Church Lane, Northam",
-  },
-  {
-    id: 9,
-    name: "Royal George Inn",
-    category: "pubs",
-    type: "Country Pub",
-    description: "17th century coaching inn with beer garden. Sunday roasts a speciality.",
-    phone: "01237 901234",
+    id: "coastal-cuts",
+    name: "Coastal Cuts",
+    category: "beauty-grooming",
+    type: "Hairdressing Salon",
+    description: "Contemporary hair styling. Colour specialists, wedding hair, and sustainable products.",
+    phone: "01237 234567",
+    instagram: "coastalcutsnortham",
     address: "Fore Street, Northam",
+    hasInstagram: true,
+  },
+  {
+    id: "the-barber-shop",
+    name: "The Barber Shop",
+    category: "beauty-grooming",
+    type: "Traditional Barbers",
+    description: "Classic cuts and hot towel shaves. Walk-ins welcome.",
+    phone: "01237 345678",
+    instagram: "thebarbershopnortham",
+    address: "Cross Street, Northam",
+    hasInstagram: true,
+  },
+  {
+    id: "pawfect-paws",
+    name: "Pawfect Paws",
+    category: "beauty-grooming",
+    type: "Dog Grooming",
+    description: "Professional dog grooming with a gentle touch. Nervous dogs welcome.",
+    phone: "01237 345678",
+    instagram: "pawfectpawsnortham",
+    address: "Market Lane, Northam",
+    hasInstagram: true,
+  },
+  {
+    id: "glow-beauty",
+    name: "Glow Beauty Studio",
+    category: "beauty-grooming",
+    type: "Beauty Salon",
+    description: "Full beauty treatments including facials, nails, lashes, and waxing.",
+    phone: "01237 456789",
+    instagram: "glowbeautynortham",
+    address: "High Street, Northam",
+    hasInstagram: true,
+  },
+  {
+    id: "hair-by-hannah",
+    name: "Hair by Hannah",
+    category: "beauty-grooming",
+    type: "Home Hairdresser",
+    description: "Mobile and home-based hairdressing. Flexible appointments to suit you.",
+    phone: "01237 567890",
+    instagram: "hairbyhannahnortham",
+    address: "By appointment",
+    hasInstagram: true,
+  },
+  {
+    id: "the-wellness-room",
+    name: "The Wellness Room",
+    category: "beauty-grooming",
+    type: "Therapy Centre",
+    description: "Massage, reflexology, and holistic therapies. Relaxation by the coast.",
+    phone: "01237 890123",
+    instagram: "wellnessroomnortham",
+    address: "Church Lane, Northam",
+    hasInstagram: true,
   },
 ];
 
 const categories = [
   { id: "all", label: "All", icon: Store },
-  { id: "food", label: "Food & Drink", icon: UtensilsCrossed },
-  { id: "pubs", label: "Pubs", icon: UtensilsCrossed },
-  { id: "accommodation", label: "Stays", icon: Bed },
-  { id: "shops", label: "Shops", icon: ShoppingBag },
-  { id: "services", label: "Services", icon: Wrench },
-  { id: "health", label: "Health", icon: Heart },
+  { id: "food-drink", label: "Food & Drink", icon: UtensilsCrossed },
+  { id: "beauty-grooming", label: "Beauty & Grooming", icon: Scissors },
 ];
 
 const Directory = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredBusinesses = allBusinesses.filter((business) => {
+  const filteredBusinesses = fullBusinesses.filter((business) => {
     const matchesCategory = selectedCategory === "all" || business.category === selectedCategory;
     const matchesSearch = business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           business.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const categoryColors: Record<string, string> = {
+    "food-drink": "bg-[hsl(var(--event-venue))]",
+    "beauty-grooming": "bg-[hsl(var(--event-business))]",
+  };
 
   return (
     <Layout>
@@ -130,7 +190,7 @@ const Directory = () => {
               Business Directory
             </h1>
             <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto">
-              Support local — discover the shops, services, and eateries that make Northam special
+              Discover the pubs, cafés, restaurants, and personal services that make Northam special
             </p>
           </div>
         </div>
@@ -177,11 +237,54 @@ const Directory = () => {
             <p className="text-muted-foreground">
               Showing <span className="font-medium text-foreground">{filteredBusinesses.length}</span> businesses
             </p>
+            <Link to="/local-services" className="text-sm text-primary hover:underline flex items-center gap-1">
+              Looking for local services? <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBusinesses.map((business) => (
-              <BusinessCard key={business.id} business={business} />
+              <Link key={business.id} to={`/business/${business.id}`}>
+                <Card className="overflow-hidden hover-lift cursor-pointer group h-full flex flex-col">
+                  <div className="h-40 bg-gradient-to-br from-coastal-mid to-coastal-light flex items-center justify-center relative">
+                    <Store className="w-10 h-10 text-primary-foreground/30" />
+                    {business.hasInstagram && (
+                      <div className="absolute top-3 right-3">
+                        <Badge variant="secondary" className="bg-primary-foreground/90 text-foreground gap-1">
+                          <Instagram className="w-3 h-3" />
+                          Feed
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-5 flex flex-col flex-grow">
+                    <Badge 
+                      className={`w-fit mb-2 ${categoryColors[business.category]} text-primary-foreground`}
+                    >
+                      {business.type}
+                    </Badge>
+                    <h3 className="font-heading text-xl font-semibold text-card-foreground mb-2 group-hover:text-primary transition-colors">
+                      {business.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-grow">
+                      {business.description}
+                    </p>
+                    <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{business.address}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 flex-shrink-0" />
+                        {business.phone}
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center text-primary text-sm font-medium group-hover:gap-2 transition-all">
+                      View Details <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 
@@ -206,7 +309,7 @@ const Directory = () => {
             Own a local business?
           </h2>
           <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-            Get your business listed in our directory. It's free for all Northam businesses.
+            Get your business listed in our directory with an Instagram feed showcase. It's free for all Northam businesses.
           </p>
           <Button className="bg-accent hover:bg-accent/90">
             Add Your Business
@@ -216,52 +319,5 @@ const Directory = () => {
     </Layout>
   );
 };
-
-// Business Card Component
-interface BusinessCardProps {
-  business: {
-    name: string;
-    type: string;
-    description: string;
-    phone: string;
-    website?: string;
-    address: string;
-  };
-}
-
-const BusinessCard = ({ business }: BusinessCardProps) => (
-  <Card className="overflow-hidden hover-lift cursor-pointer group h-full flex flex-col">
-    <div className="h-36 bg-gradient-to-br from-coastal-mid to-coastal-light flex items-center justify-center">
-      <Store className="w-10 h-10 text-primary-foreground/30" />
-    </div>
-    <CardContent className="p-5 flex flex-col flex-grow">
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        {business.type}
-      </span>
-      <h3 className="font-heading text-xl font-semibold text-card-foreground mt-1 mb-2 group-hover:text-primary transition-colors">
-        {business.name}
-      </h3>
-      <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-grow">
-        {business.description}
-      </p>
-      <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4">
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 flex-shrink-0" />
-          <span className="truncate">{business.address}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Phone className="w-4 h-4 flex-shrink-0" />
-          {business.phone}
-        </div>
-        {business.website && (
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate text-primary">{business.website}</span>
-          </div>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
 
 export default Directory;
