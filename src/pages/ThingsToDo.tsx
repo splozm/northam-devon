@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Compass, MapPin, Clock, ChevronRight, Waves, TreeDeciduous, Camera, Footprints, Bike, Fish } from "lucide-react";
+import { Compass, MapPin, Clock, ChevronRight, Waves, TreeDeciduous, Camera, Footprints, Bike, Fish, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Layout from "@/components/layout/Layout";
 
 // Things to do data
@@ -15,6 +16,8 @@ const attractions = [
     duration: "2-4 hours",
     distance: "0.5 miles from village",
     highlights: ["Bird watching", "Coastal walks", "Pebble Ridge", "Golf course views"],
+    website: "https://www.torridge.gov.uk/northamburrows",
+    badge: { text: "Free Entry", type: "success" as const },
   },
   {
     id: 2,
@@ -25,6 +28,8 @@ const attractions = [
     duration: "Half day",
     distance: "1 mile from village",
     highlights: ["Swimming", "Surfing", "Rock pools", "Beach cafes"],
+    website: "https://www.visitdevon.co.uk/westward-ho",
+    badge: { text: "Lifeguards May-Sept", type: "info" as const },
   },
   {
     id: 3,
@@ -35,6 +40,8 @@ const attractions = [
     duration: "1-6 hours",
     distance: "Various start points",
     highlights: ["Dramatic cliffs", "Clovelly walk", "Wildlife spotting", "Coastal views"],
+    website: "https://www.southwestcoastpath.org.uk",
+    badge: { text: "Year Round", type: "default" as const },
   },
   {
     id: 4,
@@ -45,6 +52,7 @@ const attractions = [
     duration: "1-2 hours",
     distance: "0.5 miles from village",
     highlights: ["Unique landscape", "Photography", "Storm watching", "Nature trails"],
+    badge: { text: "Best at Low Tide", type: "warning" as const },
   },
   {
     id: 5,
@@ -55,6 +63,8 @@ const attractions = [
     duration: "2-4 hours",
     distance: "Various routes",
     highlights: ["Tarka Trail", "Family-friendly", "Scenic views", "Flat routes available"],
+    website: "https://www.tarka-trail.co.uk",
+    badge: { text: "Family Friendly", type: "success" as const },
   },
   {
     id: 6,
@@ -65,6 +75,7 @@ const attractions = [
     duration: "Half day",
     distance: "2 miles to Appledore",
     highlights: ["Boat trips", "Kayak hire", "SUP lessons", "Fishing charters"],
+    badge: { text: "Booking Required", type: "warning" as const },
   },
 ];
 
@@ -219,44 +230,72 @@ interface AttractionCardProps {
     duration: string;
     distance: string;
     highlights: string[];
+    website?: string;
+    badge?: {
+      text: string;
+      type: "default" | "success" | "warning" | "info";
+    };
   };
 }
+
+const badgeStyles = {
+  default: "bg-muted text-muted-foreground",
+  success: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  warning: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  info: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+};
 
 const AttractionCard = ({ attraction }: AttractionCardProps) => {
   const Icon = attraction.icon;
 
   return (
-    <Card className="overflow-hidden hover-lift cursor-pointer group h-full flex flex-col">
+    <Card className="overflow-hidden hover-lift group h-full flex flex-col">
       <div className="h-36 bg-gradient-to-br from-coastal-mid to-coastal-light flex items-center justify-center relative">
         <Icon className="w-12 h-12 text-primary-foreground/30" />
         <span className="absolute top-4 left-4 px-2 py-1 rounded-full bg-card/90 text-xs font-medium text-foreground">
           {attraction.category}
         </span>
+        {attraction.badge && (
+          <span className={`absolute top-4 right-4 px-2 py-1 rounded-full text-xs font-medium ${badgeStyles[attraction.badge.type]}`}>
+            {attraction.badge.text}
+          </span>
+        )}
       </div>
       <CardContent className="p-5 flex flex-col flex-grow">
-        <h3 className="font-heading text-xl font-semibold text-card-foreground mb-2 group-hover:text-primary transition-colors">
+        <h3 className="font-heading text-xl font-bold text-card-foreground mb-2 group-hover:text-primary transition-colors">
           {attraction.title}
         </h3>
-        <p className="text-sm text-muted-foreground mb-4 flex-grow">
+        <p className="text-sm text-muted-foreground mb-4 flex-grow leading-relaxed">
           {attraction.description}
         </p>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {attraction.highlights.slice(0, 3).map((highlight, index) => (
-            <span key={index} className="px-2 py-1 bg-muted rounded-full text-xs text-muted-foreground">
+            <span key={index} className="px-2.5 py-1 bg-muted/80 rounded-full text-xs font-medium text-muted-foreground">
               {highlight}
             </span>
           ))}
         </div>
-        <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-4">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            {attraction.duration}
+        <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border pt-4 mt-auto">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-4 h-4 text-accent" />
+            <span>{attraction.duration}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <MapPin className="w-4 h-4" />
-            {attraction.distance}
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-accent" />
+            <span>{attraction.distance}</span>
           </div>
         </div>
+        {attraction.website && (
+          <a
+            href={attraction.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors text-sm font-medium"
+          >
+            <span>Learn More</span>
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
       </CardContent>
     </Card>
   );
