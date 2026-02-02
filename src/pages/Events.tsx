@@ -5,6 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
 
 // Sample events data
+// Event categories
+const eventTypes = [
+  { id: "all", label: "All Events" },
+  { id: "kids", label: "Kids & Family" },
+  { id: "active", label: "Active & Outdoors" },
+  { id: "food", label: "Food & Drink" },
+  { id: "arts", label: "Arts & Culture" },
+];
+
+// Sample events data
 const allEvents = [
   {
     id: 1,
@@ -13,7 +23,7 @@ const allEvents = [
     displayDate: "Friday, 17th January",
     time: "7:30 PM",
     venue: "Northam Hall",
-    type: "venue" as const,
+    type: "arts" as const,
     description: "Test your knowledge at our popular monthly quiz. Teams of up to 6 people, £2 per person.",
   },
   {
@@ -23,18 +33,18 @@ const allEvents = [
     displayDate: "Saturday, 18th January",
     time: "8:00 PM",
     venue: "The Kingsley Pub",
-    type: "business" as const,
+    type: "arts" as const,
     description: "Local band 'The Coastliners' perform classic rock and folk favourites.",
   },
   {
     id: 3,
-    title: "WI Monthly Meeting",
+    title: "Family Craft Morning",
     date: "2025-01-21",
     displayDate: "Tuesday, 21st January",
-    time: "2:00 PM",
+    time: "10:00 AM",
     venue: "Community Hall",
-    type: "community" as const,
-    description: "This month's talk: 'The History of Northam Burrows'. All welcome.",
+    type: "kids" as const,
+    description: "Creative crafts for children aged 3-10. Materials provided. £3 per child.",
   },
   {
     id: 4,
@@ -43,17 +53,17 @@ const allEvents = [
     displayDate: "Saturday, 25th January",
     time: "9:00 AM - 1:00 PM",
     venue: "Northam Square",
-    type: "community" as const,
+    type: "food" as const,
     description: "Fresh local produce, artisan breads, cheeses, and seasonal vegetables.",
   },
   {
     id: 5,
-    title: "Beach Clean-up",
+    title: "Beach Clean-up Walk",
     date: "2025-01-26",
     displayDate: "Sunday, 26th January",
     time: "10:00 AM",
     venue: "Westward Ho! Beach",
-    type: "community" as const,
+    type: "active" as const,
     description: "Help keep our beautiful coastline clean. Equipment provided, all ages welcome.",
   },
   {
@@ -63,36 +73,29 @@ const allEvents = [
     displayDate: "Friday, 31st January",
     time: "6:00 PM",
     venue: "Trattoria Bella",
-    type: "business" as const,
+    type: "food" as const,
     description: "Special tasting menu with wine pairings. Booking essential.",
   },
   {
     id: 7,
-    title: "Hall Committee Meeting",
+    title: "Yoga on the Burrows",
     date: "2025-02-03",
     displayDate: "Monday, 3rd February",
-    time: "7:00 PM",
-    venue: "Northam Hall",
-    type: "venue" as const,
-    description: "Planning meeting for spring events. All interested volunteers welcome.",
+    time: "9:30 AM",
+    venue: "Northam Burrows",
+    type: "active" as const,
+    description: "Outdoor yoga session (weather permitting). Bring your own mat. £5 donation.",
   },
   {
     id: 8,
-    title: "Yoga on the Burrows",
+    title: "Storytime & Singing",
     date: "2025-02-08",
     displayDate: "Saturday, 8th February",
-    time: "9:30 AM",
-    venue: "Northam Burrows",
-    type: "community" as const,
-    description: "Outdoor yoga session (weather permitting). Bring your own mat. £5 donation.",
+    time: "10:30 AM",
+    venue: "Northam Library",
+    type: "kids" as const,
+    description: "Fun stories and songs for under-5s. Free, no booking required.",
   },
-];
-
-const eventTypes = [
-  { id: "all", label: "All Events" },
-  { id: "venue", label: "Venue Events" },
-  { id: "business", label: "Business Events" },
-  { id: "community", label: "Community Events" },
 ];
 
 const Events = () => {
@@ -227,22 +230,24 @@ interface EventCardProps {
     displayDate: string;
     time: string;
     venue: string;
-    type: "venue" | "business" | "community";
+    type: "kids" | "active" | "food" | "arts";
     description: string;
   };
 }
 
 const EventCard = ({ event }: EventCardProps) => {
   const typeStyles = {
-    venue: { border: "border-l-event-venue", badge: "bg-event-venue/10 text-event-venue" },
-    business: { border: "border-l-event-business", badge: "bg-event-business/10 text-event-business" },
-    community: { border: "border-l-event-community", badge: "bg-event-community/10 text-event-community" },
+    kids: { border: "border-l-amber-500", badge: "bg-amber-500/10 text-amber-700" },
+    active: { border: "border-l-green-500", badge: "bg-green-500/10 text-green-700" },
+    food: { border: "border-l-orange-500", badge: "bg-orange-500/10 text-orange-700" },
+    arts: { border: "border-l-purple-500", badge: "bg-purple-500/10 text-purple-700" },
   };
 
   const typeLabels = {
-    venue: "Venue Event",
-    business: "Business Event",
-    community: "Community Event",
+    kids: "Kids & Family",
+    active: "Active & Outdoors",
+    food: "Food & Drink",
+    arts: "Arts & Culture",
   };
 
   return (
@@ -279,15 +284,17 @@ const EventCard = ({ event }: EventCardProps) => {
 // Event List Item Component
 const EventListItem = ({ event }: EventCardProps) => {
   const typeStyles = {
-    venue: { border: "border-l-event-venue", badge: "bg-event-venue/10 text-event-venue" },
-    business: { border: "border-l-event-business", badge: "bg-event-business/10 text-event-business" },
-    community: { border: "border-l-event-community", badge: "bg-event-community/10 text-event-community" },
+    kids: { border: "border-l-amber-500", badge: "bg-amber-500/10 text-amber-700" },
+    active: { border: "border-l-green-500", badge: "bg-green-500/10 text-green-700" },
+    food: { border: "border-l-orange-500", badge: "bg-orange-500/10 text-orange-700" },
+    arts: { border: "border-l-purple-500", badge: "bg-purple-500/10 text-purple-700" },
   };
 
   const typeLabels = {
-    venue: "Venue",
-    business: "Business",
-    community: "Community",
+    kids: "Kids & Family",
+    active: "Active & Outdoors",
+    food: "Food & Drink",
+    arts: "Arts & Culture",
   };
 
   return (
