@@ -12,6 +12,7 @@ const eventTypes = [
   { id: "active", label: "Active & Outdoors" },
   { id: "food", label: "Food & Drink" },
   { id: "arts", label: "Arts & Culture" },
+  { id: "community", label: "Community & Social" },
 ];
 
 // Sample events data
@@ -95,6 +96,26 @@ const allEvents = [
     venue: "Northam Library",
     type: "kids" as const,
     description: "Fun stories and songs for under-5s. Free, no booking required.",
+  },
+  {
+    id: 9,
+    title: "Coffee Morning & Chat",
+    date: "2025-02-05",
+    displayDate: "Wednesday, 5th February",
+    time: "10:00 AM",
+    venue: "Northam Hall",
+    type: "community" as const,
+    description: "Drop in for a cuppa and a natter. Meet neighbours and make new friends. All welcome.",
+  },
+  {
+    id: 10,
+    title: "Parish Council Meeting",
+    date: "2025-02-12",
+    displayDate: "Wednesday, 12th February",
+    time: "7:00 PM",
+    venue: "Community Hall",
+    type: "community" as const,
+    description: "Open public meeting to discuss local planning and community matters.",
   },
 ];
 
@@ -230,7 +251,7 @@ interface EventCardProps {
     displayDate: string;
     time: string;
     venue: string;
-    type: "kids" | "active" | "food" | "arts";
+    type: "kids" | "active" | "food" | "arts" | "community";
     description: string;
   };
 }
@@ -241,6 +262,7 @@ const EventCard = ({ event }: EventCardProps) => {
     active: { border: "border-l-green-500", badge: "bg-green-500/10 text-green-700" },
     food: { border: "border-l-orange-500", badge: "bg-orange-500/10 text-orange-700" },
     arts: { border: "border-l-purple-500", badge: "bg-purple-500/10 text-purple-700" },
+    community: { border: "border-l-blue-500", badge: "bg-blue-500/10 text-blue-700" },
   };
 
   const typeLabels = {
@@ -248,6 +270,7 @@ const EventCard = ({ event }: EventCardProps) => {
     active: "Active & Outdoors",
     food: "Food & Drink",
     arts: "Arts & Culture",
+    community: "Community & Social",
   };
 
   return (
@@ -288,6 +311,7 @@ const EventListItem = ({ event }: EventCardProps) => {
     active: { border: "border-l-green-500", badge: "bg-green-500/10 text-green-700" },
     food: { border: "border-l-orange-500", badge: "bg-orange-500/10 text-orange-700" },
     arts: { border: "border-l-purple-500", badge: "bg-purple-500/10 text-purple-700" },
+    community: { border: "border-l-blue-500", badge: "bg-blue-500/10 text-blue-700" },
   };
 
   const typeLabels = {
@@ -295,6 +319,7 @@ const EventListItem = ({ event }: EventCardProps) => {
     active: "Active & Outdoors",
     food: "Food & Drink",
     arts: "Arts & Culture",
+    community: "Community & Social",
   };
 
   return (
