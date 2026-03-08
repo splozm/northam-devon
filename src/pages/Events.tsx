@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Calendar, CalendarDays, MapPin, Clock, Filter, ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
+import { Calendar, Filter } from "lucide-react";
 import EventCalendarView from "@/components/events/EventCalendarView";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
 
 // Sample events data
@@ -41,7 +40,6 @@ const allEvents = [
 ];
 const Events = () => {
   const [selectedType, setSelectedType] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("grid");
 
   const filteredEvents = selectedType === "all" 
     ? allEvents 
@@ -87,59 +85,14 @@ const Events = () => {
                 </Button>
               ))}
             </div>
-
-            {/* View Toggle */}
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === "calendar" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("calendar")}
-              >
-                <CalendarDays className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Events Grid/List */}
+      {/* Events Calendar */}
       <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <p className="text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{filteredEvents.length}</span> events
-            </p>
-          </div>
-
-          {viewMode === "calendar" ? (
-            <EventCalendarView events={filteredEvents} />
-          ) : viewMode === "grid" ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredEvents.map((event) => (
-                <EventListItem key={event.id} event={event} />
-              ))}
-            </div>
-          )}
+          <EventCalendarView events={filteredEvents} />
 
           {filteredEvents.length === 0 && (
             <div className="text-center py-16">
@@ -170,121 +123,6 @@ const Events = () => {
         </div>
       </section>
     </Layout>
-  );
-};
-
-// Event Card Component
-interface EventCardProps {
-  event: {
-    title: string;
-    displayDate: string;
-    time: string;
-    venue: string;
-    type: "kids" | "active" | "food" | "arts" | "community";
-    description: string;
-  };
-}
-
-const EventCard = ({ event }: EventCardProps) => {
-  const typeStyles = {
-    kids: { border: "border-l-amber-500", badge: "bg-amber-500/10 text-amber-700" },
-    active: { border: "border-l-green-500", badge: "bg-green-500/10 text-green-700" },
-    food: { border: "border-l-orange-500", badge: "bg-orange-500/10 text-orange-700" },
-    arts: { border: "border-l-purple-500", badge: "bg-purple-500/10 text-purple-700" },
-    community: { border: "border-l-blue-500", badge: "bg-blue-500/10 text-blue-700" },
-  };
-
-  const typeLabels = {
-    kids: "Kids & Family",
-    active: "Active & Outdoors",
-    food: "Food & Drink",
-    arts: "Arts & Culture",
-    community: "Community & Social",
-  };
-
-  return (
-    <Card className={`border-l-4 ${typeStyles[event.type].border} hover-lift cursor-pointer group h-full`}>
-      <CardContent className="p-5 flex flex-col h-full">
-        <span className={`inline-block text-xs font-medium ${typeStyles[event.type].badge} px-2 py-1 rounded-full mb-3 self-start`}>
-          {typeLabels[event.type]}
-        </span>
-        <h3 className="font-heading text-xl font-semibold text-card-foreground mb-2 group-hover:text-primary transition-colors">
-          {event.title}
-        </h3>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-grow">
-          {event.description}
-        </p>
-        <div className="space-y-2 text-sm text-muted-foreground border-t border-border pt-4 mt-auto">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            {event.displayDate}
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            {event.time}
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
-            {event.venue}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Event List Item Component
-const EventListItem = ({ event }: EventCardProps) => {
-  const typeStyles = {
-    kids: { border: "border-l-amber-500", badge: "bg-amber-500/10 text-amber-700" },
-    active: { border: "border-l-green-500", badge: "bg-green-500/10 text-green-700" },
-    food: { border: "border-l-orange-500", badge: "bg-orange-500/10 text-orange-700" },
-    arts: { border: "border-l-purple-500", badge: "bg-purple-500/10 text-purple-700" },
-    community: { border: "border-l-blue-500", badge: "bg-blue-500/10 text-blue-700" },
-  };
-
-  const typeLabels = {
-    kids: "Kids & Family",
-    active: "Active & Outdoors",
-    food: "Food & Drink",
-    arts: "Arts & Culture",
-    community: "Community & Social",
-  };
-
-  return (
-    <Card className={`border-l-4 ${typeStyles[event.type].border} hover-lift cursor-pointer group`}>
-      <CardContent className="p-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex-grow">
-            <div className="flex items-center gap-3 mb-2">
-              <span className={`text-xs font-medium ${typeStyles[event.type].badge} px-2 py-1 rounded-full`}>
-                {typeLabels[event.type]}
-              </span>
-              <h3 className="font-heading text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">
-                {event.title}
-              </h3>
-            </div>
-            <p className="text-sm text-muted-foreground line-clamp-1">
-              {event.description}
-            </p>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              {event.displayDate}
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              {event.time}
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              {event.venue}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
