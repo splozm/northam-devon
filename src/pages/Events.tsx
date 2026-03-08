@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Calendar, MapPin, Clock, Filter, ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
+import { Calendar, CalendarDays, MapPin, Clock, Filter, ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
+import EventCalendarView from "@/components/events/EventCalendarView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
