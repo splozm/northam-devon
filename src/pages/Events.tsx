@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Calendar, Filter } from "lucide-react";
 import EventCalendarView from "@/components/events/EventCalendarView";
 import { Button } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 import Layout from "@/components/layout/Layout";
 
 // Sample events data
