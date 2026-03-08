@@ -185,6 +185,13 @@ const Events = () => {
               >
                 <List className="w-4 h-4" />
               </Button>
+              <Button
+                size="sm"
+                variant={viewMode === "calendar" ? "secondary" : "ghost"}
+                onClick={() => setViewMode("calendar")}
+              >
+                <CalendarDays className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
