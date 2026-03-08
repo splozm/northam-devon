@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Calendar, MapPin, Clock, Filter, ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
+import { Calendar, CalendarDays, MapPin, Clock, Filter, ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
+import EventCalendarView from "@/components/events/EventCalendarView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Layout from "@/components/layout/Layout";
@@ -121,7 +122,7 @@ const allEvents = [
 
 const Events = () => {
   const [selectedType, setSelectedType] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("grid");
 
   const filteredEvents = selectedType === "all" 
     ? allEvents 
@@ -184,6 +185,13 @@ const Events = () => {
               >
                 <List className="w-4 h-4" />
               </Button>
+              <Button
+                size="sm"
+                variant={viewMode === "calendar" ? "secondary" : "ghost"}
+                onClick={() => setViewMode("calendar")}
+              >
+                <CalendarDays className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
@@ -198,7 +206,9 @@ const Events = () => {
             </p>
           </div>
 
-          {viewMode === "grid" ? (
+          {viewMode === "calendar" ? (
+            <EventCalendarView events={filteredEvents} />
+          ) : viewMode === "grid" ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
