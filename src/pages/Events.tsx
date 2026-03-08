@@ -206,7 +206,9 @@ const Events = () => {
             </p>
           </div>
 
-          {viewMode === "grid" ? (
+          {viewMode === "calendar" ? (
+            <EventCalendarView events={filteredEvents} />
+          ) : viewMode === "grid" ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
