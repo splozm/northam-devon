@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   startOfWeek,
@@ -11,6 +11,7 @@ import {
   parseISO,
   eachDayOfInterval,
   isToday,
+  isWeekend,
 } from "date-fns";
 
 interface CalendarEvent {
@@ -28,12 +29,37 @@ interface EventCalendarViewProps {
   events: CalendarEvent[];
 }
 
-const typeStyles: Record<CalendarEvent["type"], { bg: string; border: string; dot: string }> = {
-  kids: { bg: "bg-amber-500/10", border: "border-amber-500/30", dot: "bg-amber-500" },
-  active: { bg: "bg-green-500/10", border: "border-green-500/30", dot: "bg-green-500" },
-  food: { bg: "bg-orange-500/10", border: "border-orange-500/30", dot: "bg-orange-500" },
-  arts: { bg: "bg-purple-500/10", border: "border-purple-500/30", dot: "bg-purple-500" },
-  community: { bg: "bg-blue-500/10", border: "border-blue-500/30", dot: "bg-blue-500" },
+const typeStyles: Record<CalendarEvent["type"], { gradient: string; text: string; dot: string; glow: string }> = {
+  kids: { 
+    gradient: "bg-gradient-to-br from-amber-400/20 to-orange-400/10", 
+    text: "text-amber-700",
+    dot: "bg-gradient-to-br from-amber-400 to-orange-500",
+    glow: "shadow-amber-500/20"
+  },
+  active: { 
+    gradient: "bg-gradient-to-br from-emerald-400/20 to-teal-400/10", 
+    text: "text-emerald-700",
+    dot: "bg-gradient-to-br from-emerald-400 to-teal-500",
+    glow: "shadow-emerald-500/20"
+  },
+  food: { 
+    gradient: "bg-gradient-to-br from-orange-400/20 to-red-400/10", 
+    text: "text-orange-700",
+    dot: "bg-gradient-to-br from-orange-400 to-red-500",
+    glow: "shadow-orange-500/20"
+  },
+  arts: { 
+    gradient: "bg-gradient-to-br from-violet-400/20 to-purple-400/10", 
+    text: "text-violet-700",
+    dot: "bg-gradient-to-br from-violet-400 to-purple-500",
+    glow: "shadow-violet-500/20"
+  },
+  community: { 
+    gradient: "bg-gradient-to-br from-sky-400/20 to-blue-400/10", 
+    text: "text-sky-700",
+    dot: "bg-gradient-to-br from-sky-400 to-blue-500",
+    glow: "shadow-sky-500/20"
+  },
 };
 
 const typeLabels: Record<CalendarEvent["type"], string> = {
@@ -46,6 +72,7 @@ const typeLabels: Record<CalendarEvent["type"], string> = {
 
 const EventCalendarView = ({ events }: EventCalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -63,144 +90,186 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
     return map;
   }, [events, weekStart.toISOString()]);
 
+  const totalEventsThisWeek = useMemo(() => {
+    let count = 0;
+    eventsByDay.forEach((dayEvents) => {
+      count += dayEvents.length;
+    });
+    return count;
+  }, [eventsByDay]);
+
   return (
-    <div className="space-y-6">
-      {/* Week Navigation */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
-          className="gap-1"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Previous
-        </Button>
-        <div className="text-center">
-          <h3 className="font-heading text-lg font-semibold text-foreground">
-            {format(weekStart, "d MMM")} — {format(weekEnd, "d MMM yyyy")}
-          </h3>
-          <button
-            onClick={() => setCurrentDate(new Date())}
-            className="text-xs text-primary hover:underline mt-1"
-          >
-            Jump to today
-          </button>
+    <div className="space-y-8">
+      {/* Header with Navigation */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-coastal-light/30 via-sea-foam/20 to-sand-warm/30 border border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-primary/10">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-heading text-xl font-bold text-foreground">
+              {format(weekStart, "d")} — {format(weekEnd, "d MMMM yyyy")}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {totalEventsThisWeek} event{totalEventsThisWeek !== 1 ? "s" : ""} this week
+            </p>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
-          className="gap-1"
-        >
-          Next
-          <ChevronRight className="w-4 h-4" />
-        </Button>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentDate(subWeeks(currentDate, 1))}
+            className="rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCurrentDate(new Date())}
+            className="rounded-xl text-xs font-medium hover:bg-primary/10"
+          >
+            Today
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentDate(addWeeks(currentDate, 1))}
+            className="rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden border border-border bg-border">
+      <div className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm">
         {/* Day Headers */}
-        {weekDays.map((day) => (
-          <div
-            key={`header-${day.toISOString()}`}
-            className={`px-2 py-3 text-center text-sm font-medium bg-muted ${
-              isToday(day) ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
-            <span className="hidden sm:inline">{format(day, "EEEE")}</span>
-            <span className="sm:hidden">{format(day, "EEE")}</span>
-          </div>
-        ))}
-
-        {/* Day Cells */}
-        {weekDays.map((day) => {
-          const key = format(day, "yyyy-MM-dd");
-          const dayEvents = eventsByDay.get(key) || [];
-          const today = isToday(day);
-
-          return (
+        <div className="grid grid-cols-7 border-b border-border/50">
+          {weekDays.map((day) => (
             <div
-              key={key}
-              className={`min-h-[140px] md:min-h-[180px] p-2 bg-card flex flex-col ${
-                today ? "ring-2 ring-inset ring-primary/30" : ""
+              key={`header-${day.toISOString()}`}
+              className={`px-2 py-4 text-center ${
+                isWeekend(day) ? "bg-muted/50" : "bg-muted/30"
               }`}
             >
-              {/* Date Number */}
-              <div className="flex items-center justify-between mb-2">
-                <span
-                  className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium ${
-                    today
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground"
-                  }`}
-                >
-                  {format(day, "d")}
-                </span>
-              </div>
-
-              {/* Events */}
-              <div className="flex-1 space-y-1.5 overflow-y-auto">
-                {dayEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className={`group relative rounded-md border p-1.5 md:p-2 cursor-pointer transition-all hover:shadow-md ${typeStyles[event.type].bg} ${typeStyles[event.type].border}`}
-                  >
-                    <div className="flex items-start gap-1.5">
-                      <span
-                        className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${typeStyles[event.type].dot}`}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-card-foreground leading-tight truncate">
-                          {event.title}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 hidden md:block">
-                          {event.time}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Tooltip on hover */}
-                    <div className="absolute left-0 top-full mt-1 z-50 hidden group-hover:block w-56 p-3 rounded-lg bg-card border border-border shadow-lg">
-                      <p className="font-heading text-sm font-semibold text-card-foreground mb-1">
-                        {event.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                        {event.description}
-                      </p>
-                      <div className="space-y-1 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="w-3 h-3" />
-                          {event.time}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin className="w-3 h-3" />
-                          {event.venue}
-                        </div>
-                      </div>
-                      <span className={`inline-block text-[10px] font-medium mt-2 px-1.5 py-0.5 rounded-full ${typeStyles[event.type].bg} text-card-foreground`}>
-                        {typeLabels[event.type]}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-
-                {dayEvents.length === 0 && (
-                  <p className="text-[10px] text-muted-foreground/50 text-center mt-4 hidden md:block">
-                    No events
-                  </p>
-                )}
+              <span className={`text-xs uppercase tracking-wider font-semibold ${
+                isToday(day) ? "text-primary" : "text-muted-foreground"
+              }`}>
+                <span className="hidden sm:inline">{format(day, "EEE")}</span>
+                <span className="sm:hidden">{format(day, "EEEEE")}</span>
+              </span>
+              <div className={`mt-1 text-lg font-heading font-bold ${
+                isToday(day) 
+                  ? "text-primary" 
+                  : isWeekend(day) 
+                    ? "text-muted-foreground" 
+                    : "text-foreground"
+              }`}>
+                {format(day, "d")}
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* Day Cells */}
+        <div className="grid grid-cols-7">
+          {weekDays.map((day, index) => {
+            const key = format(day, "yyyy-MM-dd");
+            const dayEvents = eventsByDay.get(key) || [];
+            const today = isToday(day);
+            const weekend = isWeekend(day);
+
+            return (
+              <div
+                key={key}
+                className={`min-h-[160px] md:min-h-[200px] p-2 md:p-3 flex flex-col transition-colors ${
+                  today 
+                    ? "bg-primary/5" 
+                    : weekend 
+                      ? "bg-muted/20" 
+                      : "bg-card"
+                } ${index < 6 ? "border-r border-border/30" : ""}`}
+              >
+                {/* Events */}
+                <div className="flex-1 space-y-2">
+                  {dayEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className={`relative rounded-xl p-2 md:p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${typeStyles[event.type].gradient} ${typeStyles[event.type].glow}`}
+                      onMouseEnter={() => setHoveredEvent(event)}
+                      onMouseLeave={() => setHoveredEvent(null)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span
+                          className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${typeStyles[event.type].dot}`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-semibold leading-tight line-clamp-2 ${typeStyles[event.type].text}`}>
+                            {event.title}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1 hidden md:flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" />
+                            {event.time}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Hover Card */}
+                      {hoveredEvent?.id === event.id && (
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-64 p-4 rounded-xl bg-card border border-border shadow-xl animate-fade-in">
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card border-l border-t border-border rotate-45" />
+                          <div className="relative">
+                            <p className="font-heading text-sm font-bold text-foreground mb-1.5">
+                              {event.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                              {event.description}
+                            </p>
+                            <div className="space-y-1.5 text-xs">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Clock className="w-3.5 h-3.5 text-primary/70" />
+                                {event.time}
+                              </div>
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <MapPin className="w-3.5 h-3.5 text-primary/70" />
+                                {event.venue}
+                              </div>
+                            </div>
+                            <div className={`inline-flex items-center gap-1.5 text-[10px] font-semibold mt-3 px-2 py-1 rounded-full ${typeStyles[event.type].gradient} ${typeStyles[event.type].text}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${typeStyles[event.type].dot}`} />
+                              {typeLabels[event.type]}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {dayEvents.length === 0 && (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-[10px] text-muted-foreground/40 hidden md:block">
+                        —
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 justify-center text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-3 justify-center">
         {Object.entries(typeLabels).map(([type, label]) => (
-          <div key={type} className="flex items-center gap-1.5">
-            <span className={`w-2.5 h-2.5 rounded-full ${typeStyles[type as CalendarEvent["type"]].dot}`} />
+          <div 
+            key={type} 
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${typeStyles[type as CalendarEvent["type"]].gradient} ${typeStyles[type as CalendarEvent["type"]].text}`}
+          >
+            <span className={`w-2 h-2 rounded-full ${typeStyles[type as CalendarEvent["type"]].dot}`} />
             {label}
           </div>
         ))}
