@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, MapPin, Clock, Filter } from "lucide-react";
+import { Calendar, Filter } from "lucide-react";
 import EventCalendarView from "@/components/events/EventCalendarView";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
