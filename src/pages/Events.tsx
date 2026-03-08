@@ -122,7 +122,7 @@ const allEvents = [
 
 const Events = () => {
   const [selectedType, setSelectedType] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "calendar">("grid");
 
   const filteredEvents = selectedType === "all" 
     ? allEvents 
