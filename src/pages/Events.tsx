@@ -96,7 +96,6 @@ const Events = () => {
           <EventCalendarView events={filteredEvents} />
 
           {filteredEvents.length === 0 && (
-          {filteredEvents.length === 0 && (
             <div className="text-center py-16">
               <Calendar className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
               <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
