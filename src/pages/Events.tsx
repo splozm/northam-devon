@@ -86,60 +86,16 @@ const Events = () => {
                 </Button>
               ))}
             </div>
-
-            {/* View Toggle */}
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === "list" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("list")}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant={viewMode === "calendar" ? "secondary" : "ghost"}
-                onClick={() => setViewMode("calendar")}
-              >
-                <CalendarDays className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Events Grid/List */}
+      {/* Events Calendar */}
       <section className="py-12 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <p className="text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{filteredEvents.length}</span> events
-            </p>
-          </div>
+          <EventCalendarView events={filteredEvents} />
 
-          {viewMode === "calendar" ? (
-            <EventCalendarView events={filteredEvents} />
-          ) : viewMode === "grid" ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredEvents.map((event) => (
-                <EventListItem key={event.id} event={event} />
-              ))}
-            </div>
-          )}
-
+          {filteredEvents.length === 0 && (
           {filteredEvents.length === 0 && (
             <div className="text-center py-16">
               <Calendar className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
