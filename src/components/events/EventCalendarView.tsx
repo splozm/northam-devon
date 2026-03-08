@@ -144,8 +144,8 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm">
+      {/* Desktop: Calendar Grid */}
+      <div className="hidden md:block rounded-2xl overflow-hidden border border-border/50 bg-card shadow-sm">
         {/* Day Headers */}
         <div className="grid grid-cols-7 border-b border-border/50">
           {weekDays.map((day) => (
@@ -158,8 +158,7 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
               <span className={`text-xs uppercase tracking-wider font-semibold ${
                 isToday(day) ? "text-primary" : "text-muted-foreground"
               }`}>
-                <span className="hidden sm:inline">{format(day, "EEE")}</span>
-                <span className="sm:hidden">{format(day, "EEEEE")}</span>
+                {format(day, "EEE")}
               </span>
               <div className={`mt-1 text-lg font-heading font-bold ${
                 isToday(day) 
@@ -185,7 +184,7 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
             return (
               <div
                 key={key}
-                className={`min-h-[160px] md:min-h-[200px] p-2 md:p-3 flex flex-col transition-colors ${
+                className={`min-h-[200px] p-3 flex flex-col transition-colors ${
                   today 
                     ? "bg-primary/5" 
                     : weekend 
@@ -193,41 +192,33 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
                       : "bg-card"
                 } ${index < 6 ? "border-r border-border/30" : ""}`}
               >
-                {/* Events */}
                 <div className="flex-1 space-y-2">
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`relative rounded-xl p-2 md:p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${typeStyles[event.type].gradient} ${typeStyles[event.type].glow}`}
+                      className={`relative rounded-xl p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${typeStyles[event.type].gradient} ${typeStyles[event.type].glow}`}
                       onMouseEnter={() => setHoveredEvent(event)}
                       onMouseLeave={() => setHoveredEvent(null)}
                     >
                       <div className="flex items-start gap-2">
-                        <span
-                          className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${typeStyles[event.type].dot}`}
-                        />
+                        <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${typeStyles[event.type].dot}`} />
                         <div className="min-w-0 flex-1">
                           <p className={`text-xs font-semibold leading-tight line-clamp-2 ${typeStyles[event.type].text}`}>
                             {event.title}
                           </p>
-                          <p className="text-[10px] text-muted-foreground mt-1 hidden md:flex items-center gap-1">
+                          <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
                             <Clock className="w-2.5 h-2.5" />
                             {event.time}
                           </p>
                         </div>
                       </div>
 
-                      {/* Hover Card */}
                       {hoveredEvent?.id === event.id && (
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-64 p-4 rounded-xl bg-card border border-border shadow-xl animate-fade-in">
                           <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card border-l border-t border-border rotate-45" />
                           <div className="relative">
-                            <p className="font-heading text-sm font-bold text-foreground mb-1.5">
-                              {event.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                              {event.description}
-                            </p>
+                            <p className="font-heading text-sm font-bold text-foreground mb-1.5">{event.title}</p>
+                            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
                             <div className="space-y-1.5 text-xs">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Clock className="w-3.5 h-3.5 text-primary/70" />
@@ -250,9 +241,7 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
 
                   {dayEvents.length === 0 && (
                     <div className="flex items-center justify-center h-full">
-                      <p className="text-[10px] text-muted-foreground/40 hidden md:block">
-                        —
-                      </p>
+                      <p className="text-[10px] text-muted-foreground/40">—</p>
                     </div>
                   )}
                 </div>
@@ -260,6 +249,90 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
             );
           })}
         </div>
+      </div>
+
+      {/* Mobile: Vertical Day List */}
+      <div className="md:hidden space-y-3">
+        {weekDays.map((day) => {
+          const key = format(day, "yyyy-MM-dd");
+          const dayEvents = eventsByDay.get(key) || [];
+          const today = isToday(day);
+
+          return (
+            <div
+              key={key}
+              className={`rounded-xl border overflow-hidden ${
+                today ? "border-primary/40 bg-primary/5" : "border-border/50 bg-card"
+              }`}
+            >
+              {/* Day Header */}
+              <div className={`flex items-center justify-between px-4 py-3 ${
+                today ? "bg-primary/10" : "bg-muted/30"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className={`font-heading text-lg font-bold ${
+                    today ? "text-primary" : "text-foreground"
+                  }`}>
+                    {format(day, "d")}
+                  </span>
+                  <span className={`text-sm font-medium ${
+                    today ? "text-primary" : "text-muted-foreground"
+                  }`}>
+                    {format(day, "EEEE")}
+                  </span>
+                  {today && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                      Today
+                    </span>
+                  )}
+                </div>
+                {dayEvents.length > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+
+              {/* Events */}
+              {dayEvents.length > 0 ? (
+                <div className="p-3 space-y-2">
+                  {dayEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className={`rounded-xl p-3 ${typeStyles[event.type].gradient}`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <span className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${typeStyles[event.type].dot}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-semibold leading-tight ${typeStyles[event.type].text}`}>
+                            {event.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            {event.description}
+                          </p>
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {event.time}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {event.venue}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-4 py-4 text-center">
+                  <p className="text-xs text-muted-foreground/50">No events</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Legend */}
