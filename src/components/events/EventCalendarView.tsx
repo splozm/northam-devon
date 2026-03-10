@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import EventDetailDrawer from "./EventDetailDrawer";
 import {
   startOfWeek,
   endOfWeek,
@@ -72,7 +73,13 @@ const typeLabels: Record<CalendarEvent["type"], string> = {
 
 const EventCalendarView = ({ events }: EventCalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setDrawerOpen(true);
+  };
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -197,8 +204,7 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
                     <div
                       key={event.id}
                       className={`relative rounded-xl p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg ${typeStyles[event.type].gradient} ${typeStyles[event.type].glow}`}
-                      onMouseEnter={() => setHoveredEvent(event)}
-                      onMouseLeave={() => setHoveredEvent(null)}
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="flex items-start gap-2">
                         <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${typeStyles[event.type].dot}`} />
@@ -212,30 +218,6 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
                           </p>
                         </div>
                       </div>
-
-                      {hoveredEvent?.id === event.id && (
-                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-64 p-4 rounded-xl bg-card border border-border shadow-xl animate-fade-in">
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card border-l border-t border-border rotate-45" />
-                          <div className="relative">
-                            <p className="font-heading text-sm font-bold text-foreground mb-1.5">{event.title}</p>
-                            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
-                            <div className="space-y-1.5 text-xs">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Clock className="w-3.5 h-3.5 text-primary/70" />
-                                {event.time}
-                              </div>
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <MapPin className="w-3.5 h-3.5 text-primary/70" />
-                                {event.venue}
-                              </div>
-                            </div>
-                            <div className={`inline-flex items-center gap-1.5 text-[10px] font-semibold mt-3 px-2 py-1 rounded-full ${typeStyles[event.type].gradient} ${typeStyles[event.type].text}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${typeStyles[event.type].dot}`} />
-                              {typeLabels[event.type]}
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ))}
 
@@ -299,7 +281,8 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`rounded-xl p-3 ${typeStyles[event.type].gradient}`}
+                      className={`rounded-xl p-3 cursor-pointer transition-all active:scale-[0.98] ${typeStyles[event.type].gradient}`}
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="flex items-start gap-2.5">
                         <span className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${typeStyles[event.type].dot}`} />
@@ -347,6 +330,12 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
           </div>
         ))}
       </div>
+
+      <EventDetailDrawer
+        event={selectedEvent}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+      />
     </div>
   );
 };
