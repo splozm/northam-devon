@@ -330,6 +330,12 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
           </div>
         ))}
       </div>
+
+      <EventDetailDrawer
+        event={selectedEvent}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+      />
     </div>
   );
 };
