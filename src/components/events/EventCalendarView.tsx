@@ -73,7 +73,13 @@ const typeLabels: Record<CalendarEvent["type"], string> = {
 
 const EventCalendarView = ({ events }: EventCalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [hoveredEvent, setHoveredEvent] = useState<CalendarEvent | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setDrawerOpen(true);
+  };
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
