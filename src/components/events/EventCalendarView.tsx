@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import EventDetailDrawer from "./EventDetailDrawer";
 import {
   startOfWeek,
   endOfWeek,
