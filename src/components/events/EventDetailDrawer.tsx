@@ -86,15 +86,21 @@ const EventDetailDrawer = ({ event, open, onOpenChange }: EventDetailDrawerProps
                   <p className="text-sm font-medium text-foreground">{event.time}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue + ", Northam, Devon")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors group"
+              >
                 <div className="p-2 rounded-lg bg-primary/10">
                   <MapPin className="w-4 h-4 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-xs text-muted-foreground">Venue</p>
                   <p className="text-sm font-medium text-foreground">{event.venue}</p>
                 </div>
-              </div>
+                <span className="text-xs text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">Map →</span>
+              </a>
             </div>
 
             {/* Description */}
