@@ -281,7 +281,8 @@ const EventCalendarView = ({ events }: EventCalendarViewProps) => {
                   {dayEvents.map((event) => (
                     <div
                       key={event.id}
-                      className={`rounded-xl p-3 ${typeStyles[event.type].gradient}`}
+                      className={`rounded-xl p-3 cursor-pointer transition-all active:scale-[0.98] ${typeStyles[event.type].gradient}`}
+                      onClick={() => handleEventClick(event)}
                     >
                       <div className="flex items-start gap-2.5">
                         <span className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${typeStyles[event.type].dot}`} />
