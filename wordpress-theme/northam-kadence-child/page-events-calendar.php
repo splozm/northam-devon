@@ -168,7 +168,7 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 				// Merge regular classes if enabled
 				$total_week_classes = 0;
 				if ( $show_classes ) {
-					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end );
+					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end, $current_category );
 					foreach ( $regular_classes as $day_key => $day_classes ) {
 						if ( isset( $events_by_day[$day_key] ) ) {
 							foreach ( $day_classes as $class ) {
@@ -266,11 +266,21 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 									<?php foreach ( $day_items as $item ) :
 										$is_class = ( $item['type'] === 'regular_class' );
 										$item_type = 'community'; // default
+										$item_name = $item['name'];
+										$item_time = $item['time'];
 
 										if ( $is_class ) {
-											$item_type = 'class';
-											$item_name = $item['name'];
-											$item_time = $item['time'];
+											// Map class category to display type
+											$class_cat = isset( $item['category'] ) ? $item['category'] : 'community-social';
+											$cat_to_type = array(
+												'kids-family'      => 'kids',
+												'active-outdoors'  => 'active',
+												'food-drink'       => 'food',
+												'arts-culture'     => 'arts',
+												'music-nightlife'  => 'arts',
+												'community-social' => 'community',
+											);
+											$item_type = isset( $cat_to_type[ $class_cat ] ) ? $cat_to_type[ $class_cat ] : 'community';
 										} else {
 											// Get event category for color coding
 											$em_event = $item['em_event'];
@@ -298,9 +308,6 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 													}
 												}
 											}
-
-											$item_name = $item['name'];
-											$item_time = $item['time'];
 										}
 										?>
 										<div class="northam-calendar-event northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>">
@@ -358,11 +365,21 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 									<?php foreach ( $day_items as $item ) :
 										$is_class = ( $item['type'] === 'regular_class' );
 										$item_type = 'community';
+										$item_name = $item['name'];
+										$item_time = $item['time'];
 
 										if ( $is_class ) {
-											$item_type = 'class';
-											$item_name = $item['name'];
-											$item_time = $item['time'];
+											// Map class category to display type
+											$class_cat = isset( $item['category'] ) ? $item['category'] : 'community-social';
+											$cat_to_type = array(
+												'kids-family'      => 'kids',
+												'active-outdoors'  => 'active',
+												'food-drink'       => 'food',
+												'arts-culture'     => 'arts',
+												'music-nightlife'  => 'arts',
+												'community-social' => 'community',
+											);
+											$item_type = isset( $cat_to_type[ $class_cat ] ) ? $cat_to_type[ $class_cat ] : 'community';
 											$location_name = $item['venue_name'];
 											$location_url = $item['venue_url'];
 											$description = $item['frequency'] . ( ! empty( $item['contact'] ) ? ' • ' . $item['contact'] : '' );
@@ -393,8 +410,6 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 												}
 											}
 
-											$item_name = $item['name'];
-											$item_time = $item['time'];
 											$location = $em_event->get_location();
 											$location_name = $location ? $location->location_name : '';
 											$location_url = '';

@@ -499,6 +499,7 @@ function northam_regular_classes_meta_box_callback( $post ) {
     $source_url = get_post_meta( $post->ID, '_northam_classes_source_url', true );
 
     $days = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
+    $categories = northam_get_class_categories();
     ?>
     <p class="description"><?php esc_html_e( 'Add regular classes/activities that take place at this venue. These will display in a schedule table on the venue page.', 'northam' ); ?></p>
 
@@ -530,20 +531,29 @@ function northam_regular_classes_meta_box_callback( $post ) {
             <h4 style="margin: 0 0 10px 0; color: #1d8a8a;"><?php echo esc_html( $day ); ?></h4>
             <div class="northam-day-classes" data-day="<?php echo esc_attr( $day ); ?>">
                 <?php if ( ! empty( $day_classes ) ) :
-                    foreach ( $day_classes as $index => $class ) : ?>
-                    <div class="northam-class-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">
+                    foreach ( $day_classes as $index => $class ) :
+                        $class_category = isset( $class['category'] ) ? $class['category'] : northam_guess_class_category( $class['name'] ?? '' );
+                    ?>
+                    <div class="northam-class-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
                         <input type="text" name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][time]"
                                value="<?php echo esc_attr( $class['time'] ?? '' ); ?>"
-                               placeholder="e.g. 9:30 - 10:30" style="width: 130px;">
+                               placeholder="e.g. 9:30 - 10:30" style="width: 110px;">
                         <input type="text" name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][name]"
                                value="<?php echo esc_attr( $class['name'] ?? '' ); ?>"
-                               placeholder="Class name" style="width: 200px;">
+                               placeholder="Class name" style="width: 160px;">
+                        <select name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][category]" style="width: 140px;">
+                            <?php foreach ( $categories as $cat_slug => $cat_label ) : ?>
+                                <option value="<?php echo esc_attr( $cat_slug ); ?>" <?php selected( $class_category, $cat_slug ); ?>>
+                                    <?php echo esc_html( $cat_label ); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                         <input type="text" name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][frequency]"
                                value="<?php echo esc_attr( $class['frequency'] ?? 'Weekly' ); ?>"
-                               placeholder="e.g. Weekly, 1st & 3rd" style="width: 120px;">
+                               placeholder="e.g. Weekly" style="width: 100px;">
                         <input type="text" name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][contact]"
                                value="<?php echo esc_attr( $class['contact'] ?? '' ); ?>"
-                               placeholder="Contact (optional)" style="width: 180px;">
+                               placeholder="Contact" style="width: 140px;">
                         <button type="button" class="button northam-remove-class" style="color: #a00;">&times;</button>
                     </div>
                     <?php endforeach;
@@ -556,17 +566,27 @@ function northam_regular_classes_meta_box_callback( $post ) {
 
     <script>
     jQuery(document).ready(function($) {
+        // Category options HTML
+        var categoryOptions = '<?php
+            $options = '';
+            foreach ( $categories as $cat_slug => $cat_label ) {
+                $options .= '<option value="' . esc_attr( $cat_slug ) . '">' . esc_html( $cat_label ) . '</option>';
+            }
+            echo $options;
+        ?>';
+
         // Add class row
         $('.northam-add-class').on('click', function() {
             var day = $(this).data('day');
             var container = $(this).siblings('.northam-day-classes');
             var index = container.find('.northam-class-row').length;
 
-            var row = '<div class="northam-class-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
-                '<input type="text" name="northam_classes[' + day + '][' + index + '][time]" placeholder="e.g. 9:30 - 10:30" style="width: 130px;">' +
-                '<input type="text" name="northam_classes[' + day + '][' + index + '][name]" placeholder="Class name" style="width: 200px;">' +
-                '<input type="text" name="northam_classes[' + day + '][' + index + '][frequency]" value="Weekly" placeholder="e.g. Weekly, 1st & 3rd" style="width: 120px;">' +
-                '<input type="text" name="northam_classes[' + day + '][' + index + '][contact]" placeholder="Contact (optional)" style="width: 180px;">' +
+            var row = '<div class="northam-class-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">' +
+                '<input type="text" name="northam_classes[' + day + '][' + index + '][time]" placeholder="e.g. 9:30 - 10:30" style="width: 110px;">' +
+                '<input type="text" name="northam_classes[' + day + '][' + index + '][name]" placeholder="Class name" style="width: 160px;">' +
+                '<select name="northam_classes[' + day + '][' + index + '][category]" style="width: 140px;">' + categoryOptions + '</select>' +
+                '<input type="text" name="northam_classes[' + day + '][' + index + '][frequency]" value="Weekly" placeholder="e.g. Weekly" style="width: 100px;">' +
+                '<input type="text" name="northam_classes[' + day + '][' + index + '][contact]" placeholder="Contact" style="width: 140px;">' +
                 '<button type="button" class="button northam-remove-class" style="color: #a00;">&times;</button>' +
                 '</div>';
 
@@ -614,11 +634,27 @@ function northam_regular_classes_meta_box_callback( $post ) {
                         $.each(classes, function(day, dayClasses) {
                             var $container = $('.northam-day-classes[data-day="' + day + '"]');
                             $.each(dayClasses, function(index, cls) {
-                                var row = '<div class="northam-class-row" style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center;">' +
-                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][time]" value="' + (cls.time || '') + '" placeholder="e.g. 9:30 - 10:30" style="width: 130px;">' +
-                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][name]" value="' + (cls.name || '') + '" placeholder="Class name" style="width: 200px;">' +
-                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][frequency]" value="' + (cls.frequency || 'Weekly') + '" placeholder="e.g. Weekly, 1st & 3rd" style="width: 120px;">' +
-                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][contact]" value="' + (cls.contact || '') + '" placeholder="Contact (optional)" style="width: 180px;">' +
+                                // Build category select with correct option selected
+                                var catSelect = '<select name="northam_classes[' + day + '][' + index + '][category]" style="width: 140px;">';
+                                var catOptionsArray = categoryOptions.split('</option>');
+                                catOptionsArray.forEach(function(opt) {
+                                    if (opt.trim()) {
+                                        var optVal = opt.match(/value="([^"]+)"/);
+                                        if (optVal && optVal[1] === (cls.category || 'community-social')) {
+                                            catSelect += opt.replace('<option', '<option selected') + '</option>';
+                                        } else {
+                                            catSelect += opt + '</option>';
+                                        }
+                                    }
+                                });
+                                catSelect += '</select>';
+
+                                var row = '<div class="northam-class-row" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">' +
+                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][time]" value="' + (cls.time || '') + '" placeholder="e.g. 9:30 - 10:30" style="width: 110px;">' +
+                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][name]" value="' + (cls.name || '') + '" placeholder="Class name" style="width: 160px;">' +
+                                    catSelect +
+                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][frequency]" value="' + (cls.frequency || 'Weekly') + '" placeholder="e.g. Weekly" style="width: 100px;">' +
+                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][contact]" value="' + (cls.contact || '') + '" placeholder="Contact" style="width: 140px;">' +
                                     '<button type="button" class="button northam-remove-class" style="color: #a00;">&times;</button>' +
                                     '</div>';
                                 $container.append(row);
@@ -626,7 +662,7 @@ function northam_regular_classes_meta_box_callback( $post ) {
                             });
                         });
 
-                        $status.html('<span style="color: #166534;">Success! Imported ' + totalClasses + ' classes. Remember to save the post.</span>').show();
+                        $status.html('<span style="color: #166534;">Success! Imported ' + totalClasses + ' classes with auto-categorization. Review categories and save the post.</span>').show();
                     } else {
                         $status.html('<span style="color: #a00;">Error: ' + (response.data.message || 'Failed to fetch classes') + '</span>').show();
                     }

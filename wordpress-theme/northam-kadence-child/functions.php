@@ -1436,6 +1436,116 @@ function northam_parse_classes_html( $html ) {
 }
 
 /**
+ * Guess the category of a class based on its name
+ * Uses keyword matching to auto-categorize classes
+ *
+ * @param string $class_name The name of the class
+ * @return string Category slug (matches event categories)
+ */
+function northam_guess_class_category( $class_name ) {
+    $name_lower = strtolower( $class_name );
+
+    // Kids & Family keywords
+    $kids_keywords = array(
+        'toddler', 'baby', 'babies', 'child', 'children', 'kids', 'kid',
+        'family', 'families', 'playgroup', 'play group', 'nursery',
+        'parent', 'mum', 'mom', 'dad', 'tot', 'junior', 'youth'
+    );
+    foreach ( $kids_keywords as $keyword ) {
+        if ( strpos( $name_lower, $keyword ) !== false ) {
+            return 'kids-family';
+        }
+    }
+
+    // Active & Outdoors keywords
+    $active_keywords = array(
+        'yoga', 'pilates', 'fitness', 'exercise', 'gym', 'workout',
+        'martial', 'karate', 'judo', 'taekwondo', 'boxing', 'kickboxing',
+        'tai chi', 'taichi', 'qigong', 'aerobics', 'zumba', 'spin',
+        'walking', 'running', 'cycling', 'swimming', 'sports', 'football',
+        'tennis', 'badminton', 'squash', 'golf', 'bowls', 'bowling',
+        'stretch', 'strength', 'cardio', 'hiit', 'body', 'weight'
+    );
+    foreach ( $active_keywords as $keyword ) {
+        if ( strpos( $name_lower, $keyword ) !== false ) {
+            return 'active-outdoors';
+        }
+    }
+
+    // Arts & Culture keywords
+    $arts_keywords = array(
+        'art', 'craft', 'crafts', 'painting', 'drawing', 'sketch',
+        'pottery', 'ceramic', 'sculpture', 'textile', 'sewing', 'knitting',
+        'crochet', 'embroidery', 'quilting', 'photography', 'creative',
+        'dance', 'dancing', 'ballet', 'ballroom', 'salsa', 'tango',
+        'theatre', 'theater', 'drama', 'acting', 'poetry', 'writing',
+        'book club', 'reading', 'literature', 'history', 'heritage',
+        'ukulele', 'ukelele', 'guitar', 'piano', 'music lesson'
+    );
+    foreach ( $arts_keywords as $keyword ) {
+        if ( strpos( $name_lower, $keyword ) !== false ) {
+            return 'arts-culture';
+        }
+    }
+
+    // Music & Nightlife keywords
+    $music_keywords = array(
+        'choir', 'chorus', 'singing', 'band', 'orchestra', 'ensemble',
+        'jazz', 'rock', 'folk', 'open mic', 'karaoke', 'dj',
+        'disco', 'party', 'night'
+    );
+    foreach ( $music_keywords as $keyword ) {
+        if ( strpos( $name_lower, $keyword ) !== false ) {
+            return 'music-nightlife';
+        }
+    }
+
+    // Food & Drink keywords
+    $food_keywords = array(
+        'cooking', 'baking', 'food', 'cuisine', 'culinary', 'chef',
+        'wine', 'beer', 'tasting', 'supper', 'lunch', 'breakfast',
+        'cafe', 'coffee morning'
+    );
+    foreach ( $food_keywords as $keyword ) {
+        if ( strpos( $name_lower, $keyword ) !== false ) {
+            return 'food-drink';
+        }
+    }
+
+    // Community & Social keywords (catch-all for social activities)
+    $community_keywords = array(
+        'social', 'club', 'group', 'meeting', 'society', 'association',
+        'bingo', 'whist', 'bridge', 'cards', 'games', 'chess',
+        'coffee', 'tea', 'chat', 'support', 'carers', 'seniors',
+        'retired', 'pensioner', 'over 50', 'over 60', 'friendship'
+    );
+    foreach ( $community_keywords as $keyword ) {
+        if ( strpos( $name_lower, $keyword ) !== false ) {
+            return 'community-social';
+        }
+    }
+
+    // Default to community-social if no match
+    return 'community-social';
+}
+
+/**
+ * Get available class categories (matches event categories)
+ *
+ * @return array Associative array of slug => label
+ */
+function northam_get_class_categories() {
+    return array(
+        'kids-family'      => 'Kids & Family',
+        'active-outdoors'  => 'Active & Outdoors',
+        'food-drink'       => 'Food & Drink',
+        'arts-culture'     => 'Arts & Culture',
+        'music-nightlife'  => 'Music & Nightlife',
+        'community-social' => 'Community & Social',
+    );
+}
+
+/**
  * Parse a single class entry from an h6 element
  *
  * Format: "Class Name (9:30 - 10:30) Weekly" or "Class Name (9:30 - 10:30) 1st and 3rd week"
@@ -1513,11 +1623,14 @@ function northam_parse_class_entry( $element ) {
         return null;
     }
 
+    $clean_name = northam_clean_text( $name );
+
     return array(
-        'name'      => northam_clean_text( $name ),
+        'name'      => $clean_name,
         'time'      => northam_clean_text( $time ),
         'frequency' => northam_clean_text( $frequency ),
         'contact'   => northam_clean_text( $contact ),
+        'category'  => northam_guess_class_category( $clean_name ),
     );
 }
 
@@ -1547,9 +1660,10 @@ function northam_clean_text( $text ) {
  *
  * @param int $week_start Unix timestamp for week start (Monday)
  * @param int $week_end Unix timestamp for week end (Sunday)
+ * @param string $category_filter Optional category slug to filter by (default 'all')
  * @return array Classes organized by date key (Y-m-d)
  */
-function northam_get_regular_classes_for_week( $week_start, $week_end ) {
+function northam_get_regular_classes_for_week( $week_start, $week_end, $category_filter = 'all' ) {
     $classes_by_day = array();
 
     // Query all venues that have regular classes
@@ -1621,6 +1735,16 @@ function northam_get_regular_classes_for_week( $week_start, $week_end ) {
                     continue;
                 }
 
+                // Get category (from stored data or guess from name)
+                $class_category = isset( $class['category'] ) && ! empty( $class['category'] )
+                    ? $class['category']
+                    : northam_guess_class_category( $class['name'] );
+
+                // Filter by category if specified
+                if ( $category_filter !== 'all' && $class_category !== $category_filter ) {
+                    continue;
+                }
+
                 // Add class to the day
                 $classes_by_day[ $date_info['key'] ][] = array(
                     'type'       => 'regular_class',
@@ -1628,6 +1752,7 @@ function northam_get_regular_classes_for_week( $week_start, $week_end ) {
                     'time'       => $class['time'],
                     'frequency'  => $class['frequency'],
                     'contact'    => isset( $class['contact'] ) ? $class['contact'] : '',
+                    'category'   => $class_category,
                     'venue_id'   => $venue->ID,
                     'venue_name' => $venue->post_title,
                     'venue_url'  => get_permalink( $venue->ID ),
