@@ -82,6 +82,7 @@ Northam - Where Community Meets Coast
   --northam-event-arts: hsl(250, 65%, 60%);        /* Blue-purple - arts & culture */
   --northam-event-music: hsl(340, 75%, 55%);       /* Pink-red - music & nightlife */
   --northam-event-community: hsl(200, 70%, 50%);   /* Blue - community & social */
+  --northam-event-class: hsl(45, 80%, 45%);        /* Gold - regular classes */
 
   /* -------------------------------------------------------------------------
      TYPOGRAPHY
@@ -4372,6 +4373,53 @@ span[class*="dashicons"],
 	color: hsl(205, 70%, 35%);
 }
 
+/* Event Type Colors - Regular Classes */
+.northam-event-class {
+	background: linear-gradient(to bottom right, hsla(45, 80%, 50%, 0.2), hsla(35, 75%, 45%, 0.1));
+	border-style: dashed;
+}
+
+.northam-event-class .event-dot {
+	background: linear-gradient(to bottom right, hsl(45, 80%, 50%), hsl(35, 75%, 45%));
+}
+
+.northam-event-class .event-title {
+	color: hsl(35, 70%, 30%);
+}
+
+.northam-event-class .event-venue {
+	font-size: 0.625rem;
+	margin: 0.25rem 0 0 0;
+}
+
+.northam-event-class .event-venue a {
+	color: var(--northam-primary);
+	text-decoration: none;
+}
+
+.northam-event-class .event-venue a:hover {
+	text-decoration: underline;
+}
+
+/* Regular Class Indicator */
+.is-regular-class {
+	position: relative;
+}
+
+.mobile-class-badge {
+	display: inline-block;
+	background: var(--northam-event-class);
+	color: white;
+	font-size: 0.5625rem;
+	font-weight: 600;
+	padding: 0.125rem 0.375rem;
+	border-radius: 0.25rem;
+	margin-left: 0.375rem;
+	vertical-align: middle;
+	text-transform: uppercase;
+	letter-spacing: 0.025em;
+}
+
 /* Event Content */
 .northam-calendar-event {
 	display: flex;
@@ -4638,6 +4686,37 @@ span[class*="dashicons"],
 
 .legend-item.northam-event-community .legend-dot {
 	background: linear-gradient(to bottom right, hsl(199, 89%, 65%), hsl(211, 85%, 60%));
+}
+
+.legend-item.northam-event-class {
+	background: linear-gradient(to bottom right, hsla(45, 80%, 50%, 0.2), hsla(35, 75%, 45%, 0.1));
+	color: hsl(35, 70%, 30%);
+}
+
+.legend-item.northam-event-class .legend-dot {
+	background: linear-gradient(to bottom right, hsl(45, 80%, 50%), hsl(35, 75%, 45%));
+}
+
+/* Filter divider and toggle button */
+.northam-filter-divider {
+	width: 1px;
+	height: 1.5rem;
+	background: var(--northam-border);
+	margin: 0 0.5rem;
+}
+
+.northam-filter-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.northam-filter-toggle svg {
+	opacity: 0.7;
+}
+
+.northam-filter-toggle.active svg {
+	opacity: 1;
 }
 
 /* ====================================================================

@@ -1537,6 +1537,154 @@ function northam_clean_text( $text ) {
 
 /**
  * =============================================================================
+ * REGULAR CLASSES CALENDAR INTEGRATION
+ * =============================================================================
+ */
+
+/**
+ * Get all regular classes from venues for a specific week
+ * Converts recurring classes into date-specific entries for calendar display
+ *
+ * @param int $week_start Unix timestamp for week start (Monday)
+ * @param int $week_end Unix timestamp for week end (Sunday)
+ * @return array Classes organized by date key (Y-m-d)
+ */
+function northam_get_regular_classes_for_week( $week_start, $week_end ) {
+    $classes_by_day = array();
+
+    // Query all venues that have regular classes
+    $venues = get_posts( array(
+        'post_type'      => 'northam_venue',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish',
+        'meta_query'     => array(
+            array(
+                'key'     => '_northam_regular_classes',
+                'value'   => '',
+                'compare' => '!=',
+            ),
+        ),
+    ) );
+
+    if ( empty( $venues ) ) {
+        return $classes_by_day;
+    }
+
+    // Day name mapping
+    $day_names = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
+
+    // Generate dates for the week
+    $week_dates = array();
+    for ( $i = 0; $i < 7; $i++ ) {
+        $day_timestamp = $week_start + ( $i * 24 * 60 * 60 );
+        $day_key = date( 'Y-m-d', $day_timestamp );
+        $day_name = date( 'l', $day_timestamp );
+        $week_of_month = ceil( date( 'j', $day_timestamp ) / 7 ); // 1st, 2nd, 3rd, 4th week
+
+        $week_dates[] = array(
+            'key'           => $day_key,
+            'day_name'      => $day_name,
+            'timestamp'     => $day_timestamp,
+            'week_of_month' => $week_of_month,
+            'is_last_week'  => ( date( 'j', $day_timestamp ) + 7 > date( 't', $day_timestamp ) ),
+        );
+
+        $classes_by_day[ $day_key ] = array();
+    }
+
+    // Process each venue's classes
+    foreach ( $venues as $venue ) {
+        $classes_json = get_post_meta( $venue->ID, '_northam_regular_classes', true );
+
+        if ( empty( $classes_json ) ) {
+            continue;
+        }
+
+        $classes_data = json_decode( $classes_json, true );
+
+        if ( empty( $classes_data ) || ! is_array( $classes_data ) ) {
+            continue;
+        }
+
+        // Check each day in the week
+        foreach ( $week_dates as $date_info ) {
+            $day_name = $date_info['day_name'];
+
+            // Check if venue has classes on this day
+            if ( ! isset( $classes_data[ $day_name ] ) || empty( $classes_data[ $day_name ] ) ) {
+                continue;
+            }
+
+            foreach ( $classes_data[ $day_name ] as $class ) {
+                // Check frequency to determine if class occurs this week
+                if ( ! northam_class_occurs_on_date( $class, $date_info ) ) {
+                    continue;
+                }
+
+                // Add class to the day
+                $classes_by_day[ $date_info['key'] ][] = array(
+                    'type'       => 'regular_class',
+                    'name'       => $class['name'],
+                    'time'       => $class['time'],
+                    'frequency'  => $class['frequency'],
+                    'contact'    => isset( $class['contact'] ) ? $class['contact'] : '',
+                    'venue_id'   => $venue->ID,
+                    'venue_name' => $venue->post_title,
+                    'venue_url'  => get_permalink( $venue->ID ),
+                );
+            }
+        }
+    }
+
+    return $classes_by_day;
+}
+
+/**
+ * Determine if a class occurs on a specific date based on its frequency
+ *
+ * @param array $class Class data with 'frequency' key
+ * @param array $date_info Date info with 'week_of_month' and 'is_last_week'
+ * @return bool
+ */
+function northam_class_occurs_on_date( $class, $date_info ) {
+    $frequency = isset( $class['frequency'] ) ? strtolower( $class['frequency'] ) : 'weekly';
+    $week = $date_info['week_of_month'];
+    $is_last = $date_info['is_last_week'];
+
+    // Weekly classes always occur
+    if ( $frequency === 'weekly' || empty( $frequency ) ) {
+        return true;
+    }
+
+    // Check specific week patterns
+    if ( strpos( $frequency, '1st' ) !== false && strpos( $frequency, '3rd' ) !== false ) {
+        return ( $week === 1 || $week === 3 );
+    }
+    if ( strpos( $frequency, '2nd' ) !== false && strpos( $frequency, '4th' ) !== false ) {
+        return ( $week === 2 || $week === 4 );
+    }
+    if ( strpos( $frequency, '1st' ) !== false ) {
+        return ( $week === 1 );
+    }
+    if ( strpos( $frequency, '2nd' ) !== false ) {
+        return ( $week === 2 );
+    }
+    if ( strpos( $frequency, '3rd' ) !== false ) {
+        return ( $week === 3 );
+    }
+    if ( strpos( $frequency, '4th' ) !== false ) {
+        return ( $week === 4 );
+    }
+    if ( strpos( $frequency, 'last' ) !== false ) {
+        return $is_last;
+    }
+
+    // Default to occurring
+    return true;
+}
+
+/**
+ * =============================================================================
  * INCLUDE ADDITIONAL FILES
  * =============================================================================
  */

@@ -8,6 +8,7 @@ get_header();
 
 // Get current filter from URL
 $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['category']) : 'all';
+$show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Show classes by default
 ?>
 
 <div class="northam-events-calendar-page">
@@ -69,6 +70,15 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 					<a href="<?php echo esc_url(add_query_arg('category', 'community-social', remove_query_arg('category'))); ?>"
 					   class="northam-filter-btn <?php echo $current_category === 'community-social' ? 'active' : ''; ?>">
 						Community & Social
+					</a>
+					<span class="northam-filter-divider"></span>
+					<a href="<?php echo esc_url(add_query_arg('classes', $show_classes ? '0' : '1')); ?>"
+					   class="northam-filter-btn northam-filter-toggle <?php echo $show_classes ? 'active' : ''; ?>">
+						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+							<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+						</svg>
+						Regular Classes
 					</a>
 				</div>
 			</div>
@@ -142,10 +152,41 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 					if ( $em_event->start >= $week_start && $em_event->start <= $week_end ) {
 						$event_day = date( 'Y-m-d', $em_event->start );
 						if ( isset( $events_by_day[$event_day] ) ) {
-							$events_by_day[$event_day][] = $em_event;
+							// Wrap EM_Event in a standardized array format
+							$events_by_day[$event_day][] = array(
+								'type'        => 'event',
+								'em_event'    => $em_event,
+								'name'        => $em_event->event_name,
+								'time'        => $em_event->output( '#_EVENTTIMES' ),
+								'start_time'  => $em_event->event_start_time,
+							);
 							$total_week_events++;
 						}
 					}
+				}
+
+				// Merge regular classes if enabled
+				$total_week_classes = 0;
+				if ( $show_classes ) {
+					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end );
+					foreach ( $regular_classes as $day_key => $day_classes ) {
+						if ( isset( $events_by_day[$day_key] ) ) {
+							foreach ( $day_classes as $class ) {
+								$events_by_day[$day_key][] = $class;
+								$total_week_classes++;
+							}
+						}
+					}
+
+					// Sort each day's items by start time
+					foreach ( $events_by_day as $day_key => &$day_items ) {
+						usort( $day_items, function( $a, $b ) {
+							$time_a = isset( $a['start_time'] ) ? $a['start_time'] : ( isset( $a['time'] ) ? explode( ' - ', $a['time'] )[0] : '00:00' );
+							$time_b = isset( $b['start_time'] ) ? $b['start_time'] : ( isset( $b['time'] ) ? explode( ' - ', $b['time'] )[0] : '00:00' );
+							return strcmp( $time_a, $time_b );
+						});
+					}
+					unset( $day_items );
 				}
 
 				// Format week heading like React: "d — d MMMM yyyy"
@@ -165,7 +206,16 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 						<div>
 							<h3 class="northam-calendar-week-range"><?php echo esc_html( $week_heading ); ?></h3>
 							<p class="northam-calendar-event-count">
-								<?php echo $total_week_events; ?> event<?php echo $total_week_events !== 1 ? 's' : ''; ?> this week
+								<?php
+								$count_parts = array();
+								if ( $total_week_events > 0 ) {
+									$count_parts[] = $total_week_events . ' event' . ( $total_week_events !== 1 ? 's' : '' );
+								}
+								if ( $show_classes && $total_week_classes > 0 ) {
+									$count_parts[] = $total_week_classes . ' class' . ( $total_week_classes !== 1 ? 'es' : '' );
+								}
+								echo ! empty( $count_parts ) ? implode( ', ', $count_parts ) . ' this week' : 'No events this week';
+								?>
 							</p>
 						</div>
 					</div>
@@ -209,51 +259,68 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 					<!-- Day Cells -->
 					<div class="northam-calendar-day-cells">
 						<?php foreach ( $week_days as $day ) :
-							$day_events = $events_by_day[$day['key']];
+							$day_items = $events_by_day[$day['key']];
 							?>
 							<div class="northam-calendar-day-cell <?php echo $day['is_today'] ? 'is-today' : ''; ?> <?php echo $day['is_weekend'] ? 'is-weekend' : ''; ?>">
-								<?php if ( ! empty( $day_events ) ) : ?>
-									<?php foreach ( $day_events as $event ) :
-										// Get event category for color coding
-										$categories = $event->get_categories();
-										$event_type = 'community'; // default
+								<?php if ( ! empty( $day_items ) ) : ?>
+									<?php foreach ( $day_items as $item ) :
+										$is_class = ( $item['type'] === 'regular_class' );
+										$item_type = 'community'; // default
 
-										if ( $categories && is_object( $categories ) ) {
-											$categories = $categories->categories;
-										}
+										if ( $is_class ) {
+											$item_type = 'class';
+											$item_name = $item['name'];
+											$item_time = $item['time'];
+										} else {
+											// Get event category for color coding
+											$em_event = $item['em_event'];
+											$categories = $em_event->get_categories();
 
-										if ( ! empty( $categories ) && is_array( $categories ) ) {
-											$first_cat = reset( $categories );
-											if ( is_object( $first_cat ) ) {
-												$cat_slug = isset( $first_cat->slug ) ? $first_cat->slug : '';
+											if ( $categories && is_object( $categories ) ) {
+												$categories = $categories->categories;
+											}
 
-												if ( strpos( $cat_slug, 'kids' ) !== false || strpos( $cat_slug, 'family' ) !== false ) {
-													$event_type = 'kids';
-												} elseif ( strpos( $cat_slug, 'active' ) !== false || strpos( $cat_slug, 'outdoors' ) !== false ) {
-													$event_type = 'active';
-												} elseif ( strpos( $cat_slug, 'food' ) !== false || strpos( $cat_slug, 'drink' ) !== false ) {
-													$event_type = 'food';
-												} elseif ( strpos( $cat_slug, 'arts' ) !== false || strpos( $cat_slug, 'culture' ) !== false ) {
-													$event_type = 'arts';
-												} elseif ( strpos( $cat_slug, 'music' ) !== false || strpos( $cat_slug, 'nightlife' ) !== false ) {
-													$event_type = 'arts';
+											if ( ! empty( $categories ) && is_array( $categories ) ) {
+												$first_cat = reset( $categories );
+												if ( is_object( $first_cat ) ) {
+													$cat_slug = isset( $first_cat->slug ) ? $first_cat->slug : '';
+
+													if ( strpos( $cat_slug, 'kids' ) !== false || strpos( $cat_slug, 'family' ) !== false ) {
+														$item_type = 'kids';
+													} elseif ( strpos( $cat_slug, 'active' ) !== false || strpos( $cat_slug, 'outdoors' ) !== false ) {
+														$item_type = 'active';
+													} elseif ( strpos( $cat_slug, 'food' ) !== false || strpos( $cat_slug, 'drink' ) !== false ) {
+														$item_type = 'food';
+													} elseif ( strpos( $cat_slug, 'arts' ) !== false || strpos( $cat_slug, 'culture' ) !== false ) {
+														$item_type = 'arts';
+													} elseif ( strpos( $cat_slug, 'music' ) !== false || strpos( $cat_slug, 'nightlife' ) !== false ) {
+														$item_type = 'arts';
+													}
 												}
 											}
-										}
 
-										$event_time = $event->output( '#_EVENTTIMES' );
+											$item_name = $item['name'];
+											$item_time = $item['time'];
+										}
 										?>
-										<div class="northam-calendar-event northam-event-<?php echo esc_attr( $event_type ); ?>">
+										<div class="northam-calendar-event northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
-												<p class="event-title"><?php echo esc_html( $event->event_name ); ?></p>
+												<p class="event-title"><?php echo esc_html( $item_name ); ?></p>
 												<p class="event-time">
 													<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 														<circle cx="12" cy="12" r="10"></circle>
 														<polyline points="12 6 12 12 16 14"></polyline>
 													</svg>
-													<?php echo esc_html( $event_time ); ?>
+													<?php echo esc_html( $item_time ); ?>
 												</p>
+												<?php if ( $is_class && ! empty( $item['venue_name'] ) ) : ?>
+													<p class="event-venue">
+														<a href="<?php echo esc_url( $item['venue_url'] ); ?>">
+															<?php echo esc_html( $item['venue_name'] ); ?>
+														</a>
+													</p>
+												<?php endif; ?>
 											</div>
 										</div>
 									<?php endforeach; ?>
@@ -268,7 +335,7 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 				<!-- Mobile: Vertical Day List -->
 				<div class="northam-calendar-mobile">
 					<?php foreach ( $week_days as $day ) :
-						$day_events = $events_by_day[$day['key']];
+						$day_items = $events_by_day[$day['key']];
 						?>
 						<div class="northam-mobile-day-card <?php echo $day['is_today'] ? 'is-today' : ''; ?>">
 							<div class="mobile-day-header">
@@ -279,52 +346,70 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 										<span class="mobile-today-badge">Today</span>
 									<?php endif; ?>
 								</div>
-								<?php if ( ! empty( $day_events ) ) : ?>
+								<?php if ( ! empty( $day_items ) ) : ?>
 									<span class="mobile-event-count">
-										<?php echo count( $day_events ); ?> event<?php echo count( $day_events ) !== 1 ? 's' : ''; ?>
+										<?php echo count( $day_items ); ?> item<?php echo count( $day_items ) !== 1 ? 's' : ''; ?>
 									</span>
 								<?php endif; ?>
 							</div>
 
-							<?php if ( ! empty( $day_events ) ) : ?>
+							<?php if ( ! empty( $day_items ) ) : ?>
 								<div class="mobile-day-events">
-									<?php foreach ( $day_events as $event ) :
-										// Get event category for color coding
-										$categories = $event->get_categories();
-										$event_type = 'community';
+									<?php foreach ( $day_items as $item ) :
+										$is_class = ( $item['type'] === 'regular_class' );
+										$item_type = 'community';
 
-										if ( $categories && is_object( $categories ) ) {
-											$categories = $categories->categories;
-										}
+										if ( $is_class ) {
+											$item_type = 'class';
+											$item_name = $item['name'];
+											$item_time = $item['time'];
+											$location_name = $item['venue_name'];
+											$location_url = $item['venue_url'];
+											$description = $item['frequency'] . ( ! empty( $item['contact'] ) ? ' • ' . $item['contact'] : '' );
+										} else {
+											$em_event = $item['em_event'];
+											$categories = $em_event->get_categories();
 
-										if ( ! empty( $categories ) && is_array( $categories ) ) {
-											$first_cat = reset( $categories );
-											if ( is_object( $first_cat ) ) {
-												$cat_slug = isset( $first_cat->slug ) ? $first_cat->slug : '';
+											if ( $categories && is_object( $categories ) ) {
+												$categories = $categories->categories;
+											}
 
-												if ( strpos( $cat_slug, 'kids' ) !== false || strpos( $cat_slug, 'family' ) !== false ) {
-													$event_type = 'kids';
-												} elseif ( strpos( $cat_slug, 'active' ) !== false || strpos( $cat_slug, 'outdoors' ) !== false ) {
-													$event_type = 'active';
-												} elseif ( strpos( $cat_slug, 'food' ) !== false || strpos( $cat_slug, 'drink' ) !== false ) {
-													$event_type = 'food';
-												} elseif ( strpos( $cat_slug, 'arts' ) !== false || strpos( $cat_slug, 'culture' ) !== false ) {
-													$event_type = 'arts';
-												} elseif ( strpos( $cat_slug, 'music' ) !== false || strpos( $cat_slug, 'nightlife' ) !== false ) {
-													$event_type = 'arts';
+											if ( ! empty( $categories ) && is_array( $categories ) ) {
+												$first_cat = reset( $categories );
+												if ( is_object( $first_cat ) ) {
+													$cat_slug = isset( $first_cat->slug ) ? $first_cat->slug : '';
+
+													if ( strpos( $cat_slug, 'kids' ) !== false || strpos( $cat_slug, 'family' ) !== false ) {
+														$item_type = 'kids';
+													} elseif ( strpos( $cat_slug, 'active' ) !== false || strpos( $cat_slug, 'outdoors' ) !== false ) {
+														$item_type = 'active';
+													} elseif ( strpos( $cat_slug, 'food' ) !== false || strpos( $cat_slug, 'drink' ) !== false ) {
+														$item_type = 'food';
+													} elseif ( strpos( $cat_slug, 'arts' ) !== false || strpos( $cat_slug, 'culture' ) !== false ) {
+														$item_type = 'arts';
+													} elseif ( strpos( $cat_slug, 'music' ) !== false || strpos( $cat_slug, 'nightlife' ) !== false ) {
+														$item_type = 'arts';
+													}
 												}
 											}
-										}
 
-										$event_time = $event->output( '#_EVENTTIMES' );
-										$location = $event->get_location();
-										$location_name = $location ? $location->location_name : '';
-										$description = wp_trim_words( $event->post_content, 15 );
+											$item_name = $item['name'];
+											$item_time = $item['time'];
+											$location = $em_event->get_location();
+											$location_name = $location ? $location->location_name : '';
+											$location_url = '';
+											$description = wp_trim_words( $em_event->post_content, 15 );
+										}
 										?>
-										<div class="mobile-event-card northam-event-<?php echo esc_attr( $event_type ); ?>">
+										<div class="mobile-event-card northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
-												<p class="mobile-event-title"><?php echo esc_html( $event->event_name ); ?></p>
+												<p class="mobile-event-title">
+													<?php echo esc_html( $item_name ); ?>
+													<?php if ( $is_class ) : ?>
+														<span class="mobile-class-badge">Class</span>
+													<?php endif; ?>
+												</p>
 												<p class="mobile-event-description"><?php echo esc_html( $description ); ?></p>
 												<div class="mobile-event-meta">
 													<span>
@@ -332,7 +417,7 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 															<circle cx="12" cy="12" r="10"></circle>
 															<polyline points="12 6 12 12 16 14"></polyline>
 														</svg>
-														<?php echo esc_html( $event_time ); ?>
+														<?php echo esc_html( $item_time ); ?>
 													</span>
 													<?php if ( $location_name ) : ?>
 														<span>
@@ -340,7 +425,11 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 																<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
 																<circle cx="12" cy="10" r="3"></circle>
 															</svg>
-															<?php echo esc_html( $location_name ); ?>
+															<?php if ( $is_class && $location_url ) : ?>
+																<a href="<?php echo esc_url( $location_url ); ?>"><?php echo esc_html( $location_name ); ?></a>
+															<?php else : ?>
+																<?php echo esc_html( $location_name ); ?>
+															<?php endif; ?>
 														</span>
 													<?php endif; ?>
 												</div>
@@ -379,6 +468,12 @@ $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['catego
 						<span class="legend-dot"></span>
 						<span>Community & Social</span>
 					</div>
+					<?php if ( $show_classes ) : ?>
+					<div class="legend-item northam-event-class">
+						<span class="legend-dot"></span>
+						<span>Regular Classes</span>
+					</div>
+					<?php endif; ?>
 				</div>
 
 			<?php
