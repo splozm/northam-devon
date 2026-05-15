@@ -59,7 +59,7 @@ const allEvents: CalendarEvent[] = [
   { id: 20, title: "Art Exhibition Opening", date: "2026-03-21", displayDate: "Saturday, 21st March", time: "11:00 AM", venue: "The Burton Gallery", type: "arts", description: "New exhibition showcasing local Devon artists. Free entry, donations welcome." },
 ];
 
-const typeConfig: Record<EventType, { label: string; dot: string; pill: string; border: string }> = {
+const typeConfig: Record<EventType, { label: string; dot: string; pill: string; tile: string }> = {
   kids:      { label: "Kids",      dot: "bg-amber-500",   pill: "bg-amber-100 text-amber-800",     tile: "bg-amber-50 hover:bg-amber-100/80" },
   active:    { label: "Active",    dot: "bg-emerald-500", pill: "bg-emerald-100 text-emerald-800", tile: "bg-emerald-50 hover:bg-emerald-100/80" },
   food:      { label: "Food",      dot: "bg-orange-500",  pill: "bg-orange-100 text-orange-800",   tile: "bg-orange-50 hover:bg-orange-100/80" },
