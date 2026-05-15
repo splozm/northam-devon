@@ -59,12 +59,12 @@ const allEvents: CalendarEvent[] = [
   { id: 20, title: "Art Exhibition Opening", date: "2026-03-21", displayDate: "Saturday, 21st March", time: "11:00 AM", venue: "The Burton Gallery", type: "arts", description: "New exhibition showcasing local Devon artists. Free entry, donations welcome." },
 ];
 
-const typeConfig: Record<EventType, { label: string; dot: string; pill: string; border: string }> = {
-  kids:      { label: "Kids",      dot: "bg-amber-500",   pill: "bg-amber-100 text-amber-800",     border: "border-l-amber-500" },
-  active:    { label: "Active",    dot: "bg-emerald-500", pill: "bg-emerald-100 text-emerald-800", border: "border-l-emerald-500" },
-  food:      { label: "Food",      dot: "bg-orange-500",  pill: "bg-orange-100 text-orange-800",   border: "border-l-orange-500" },
-  arts:      { label: "Arts",      dot: "bg-violet-500",  pill: "bg-violet-100 text-violet-800",   border: "border-l-violet-500" },
-  community: { label: "Community", dot: "bg-sky-500",     pill: "bg-sky-100 text-sky-800",         border: "border-l-sky-500" },
+const typeConfig: Record<EventType, { label: string; dot: string; pill: string; tile: string }> = {
+  kids:      { label: "Kids",      dot: "bg-amber-500",   pill: "bg-amber-100 text-amber-800",     tile: "bg-amber-50 hover:bg-amber-100/80" },
+  active:    { label: "Active",    dot: "bg-emerald-500", pill: "bg-emerald-100 text-emerald-800", tile: "bg-emerald-50 hover:bg-emerald-100/80" },
+  food:      { label: "Food",      dot: "bg-orange-500",  pill: "bg-orange-100 text-orange-800",   tile: "bg-orange-50 hover:bg-orange-100/80" },
+  arts:      { label: "Arts",      dot: "bg-violet-500",  pill: "bg-violet-100 text-violet-800",   tile: "bg-violet-50 hover:bg-violet-100/80" },
+  community: { label: "Community", dot: "bg-sky-500",     pill: "bg-sky-100 text-sky-800",         tile: "bg-sky-50 hover:bg-sky-100/80" },
 };
 
 const EventsV2 = () => {
@@ -229,14 +229,14 @@ const EventsV2 = () => {
                 {dayEvents.length === 0 ? (
                   <p className="text-xs text-muted-foreground/60 italic py-1">Nothing on</p>
                 ) : (
-                  <ul className="divide-y divide-border/40">
+                   <ul className="space-y-1.5">
                     {dayEvents.map((event) => {
                       const cfg = typeConfig[event.type];
                       return (
                         <li key={event.id}>
                           <button
                             onClick={() => handleEventClick(event)}
-                            className={`w-full text-left py-2.5 pl-3 pr-1 border-l-2 ${cfg.border} hover:bg-muted/40 active:bg-muted/60 transition-colors`}
+                            className={`w-full text-left rounded-md py-2.5 px-3 ${cfg.tile} transition-colors`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <p className="text-sm font-semibold text-foreground leading-snug flex-1">
@@ -303,7 +303,7 @@ const EventsV2 = () => {
                         <button
                           key={event.id}
                           onClick={() => handleEventClick(event)}
-                          className={`w-full text-left rounded-md p-2 bg-background hover:bg-muted/60 border-l-2 ${cfg.border} transition-colors`}
+                          className={`w-full text-left rounded-md p-2 ${cfg.tile} transition-colors`}
                         >
                           <div className="text-[10px] font-semibold text-muted-foreground">
                             {event.time}
