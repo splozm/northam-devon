@@ -2115,13 +2115,6 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
     // Query venues that have regular classes
     $venues = get_posts( $query_args );
 
-    // DEBUG
-    echo '<!-- DEBUG venues found: ' . count($venues) . ' -->';
-    foreach ($venues as $v) {
-        $meta = get_post_meta($v->ID, '_northam_regular_classes', true);
-        echo '<!-- DEBUG venue ' . $v->ID . ' (' . esc_html($v->post_title) . '): meta length = ' . strlen($meta) . ' -->';
-    }
-
     if ( empty( $venues ) ) {
         return $classes_by_day;
     }
