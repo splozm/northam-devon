@@ -26,9 +26,6 @@ function northam_register_meta_boxes() {
     //     return;
     // }
 
-    // Debug: Log that function is being called
-    error_log( 'Northam: Registering meta boxes for screen: ' . get_current_screen()->post_type );
-
     add_meta_box(
         'northam_business_details',
         __( 'Business Details', 'northam' ),
@@ -84,8 +81,6 @@ function northam_register_meta_boxes() {
         'normal',
         'default'
     );
-
-    error_log( 'Northam: Meta boxes registered successfully' );
 }
 add_action( 'add_meta_boxes', 'northam_register_meta_boxes' );
 
@@ -212,17 +207,29 @@ function northam_business_meta_box_callback( $post ) {
  */
 function northam_venue_meta_box_callback( $post ) {
     wp_nonce_field( 'northam_venue_meta', 'northam_venue_nonce' );
+    $is_venue = get_post_meta( $post->ID, '_northam_is_venue', true );
     $address = get_post_meta( $post->ID, '_northam_address', true );
     $phone = get_post_meta( $post->ID, '_northam_phone', true );
     $email = get_post_meta( $post->ID, '_northam_email', true );
     $website = get_post_meta( $post->ID, '_northam_website', true );
     $facilities = get_post_meta( $post->ID, '_northam_facilities', true );
     $capacity = get_post_meta( $post->ID, '_northam_capacity', true );
+    $map_url = get_post_meta( $post->ID, '_northam_map_url', true );
     $lat = get_post_meta( $post->ID, '_northam_lat', true );
     $lng = get_post_meta( $post->ID, '_northam_lng', true );
     $enquiry_form = get_post_meta( $post->ID, '_northam_enquiry_form', true );
     ?>
     <table class="form-table northam-meta-table">
+        <tr>
+            <th><label for="northam_is_venue"><?php esc_html_e( 'Page Settings', 'northam' ); ?></label></th>
+            <td>
+                <label style="display: block; margin-bottom: 4px;">
+                    <input type="checkbox" id="northam_is_venue" name="northam_is_venue" value="1" <?php checked( $is_venue, '1' ); ?> />
+                    <?php esc_html_e( 'This is a venue', 'northam' ); ?>
+                </label>
+                <p class="description" style="margin: 0 0 0 24px;"><?php esc_html_e( 'Check for physical locations where events are held. Appears in Events Calendar venue filter.', 'northam' ); ?></p>
+            </td>
+        </tr>
         <tr><th><label for="northam_address"><?php esc_html_e( 'Address', 'northam' ); ?></label></th>
         <td><textarea id="northam_address" name="northam_address" rows="3" class="large-text"><?php echo esc_textarea( $address ); ?></textarea></td></tr>
         <tr><th><label for="northam_phone"><?php esc_html_e( 'Phone', 'northam' ); ?></label></th>
@@ -237,6 +244,9 @@ function northam_venue_meta_box_callback( $post ) {
         <td><textarea id="northam_facilities" name="northam_facilities" rows="5" class="large-text"><?php echo esc_textarea( $facilities ); ?></textarea>
         <p class="description"><?php esc_html_e( 'One per line', 'northam' ); ?></p></td></tr>
         <tr><th colspan="2"><strong><?php esc_html_e( 'Location', 'northam' ); ?></strong></th></tr>
+        <tr><th><label for="northam_map_url"><?php esc_html_e( 'Google Maps URL', 'northam' ); ?></label></th>
+        <td><input type="url" id="northam_map_url" name="northam_map_url" value="<?php echo esc_url( $map_url ); ?>" class="large-text" placeholder="https://maps.google.com/?q=Your+Venue+Name">
+        <p class="description"><?php esc_html_e( 'Paste your Google Maps link here (for "View on Map" button)', 'northam' ); ?></p></td></tr>
         <tr><th><label for="northam_lat"><?php esc_html_e( 'Latitude', 'northam' ); ?></label></th>
         <td><input type="text" id="northam_lat" name="northam_lat" value="<?php echo esc_attr( $lat ); ?>" class="regular-text"></td></tr>
         <tr><th><label for="northam_lng"><?php esc_html_e( 'Longitude', 'northam' ); ?></label></th>
@@ -465,11 +475,15 @@ add_action('save_post_northam_business','northam_save_business_meta');
 function northam_save_venue_meta($post_id){
     if(!isset($_POST['northam_venue_nonce'])||!wp_verify_nonce($_POST['northam_venue_nonce'],'northam_venue_meta')||defined('DOING_AUTOSAVE')&&DOING_AUTOSAVE||!current_user_can('edit_post',$post_id))return;
 
-    $f=['northam_address'=>'_northam_address','northam_phone'=>'_northam_phone','northam_email'=>'_northam_email','northam_website'=>'_northam_website','northam_facilities'=>'_northam_facilities','northam_capacity'=>'_northam_capacity','northam_lat'=>'_northam_lat','northam_lng'=>'_northam_lng','northam_enquiry_form'=>'_northam_enquiry_form'];
+    // Save is_venue checkbox
+    $is_venue = isset($_POST['northam_is_venue']) ? '1' : '';
+    update_post_meta($post_id, '_northam_is_venue', $is_venue);
+
+    $f=['northam_address'=>'_northam_address','northam_phone'=>'_northam_phone','northam_email'=>'_northam_email','northam_website'=>'_northam_website','northam_facilities'=>'_northam_facilities','northam_capacity'=>'_northam_capacity','northam_map_url'=>'_northam_map_url','northam_lat'=>'_northam_lat','northam_lng'=>'_northam_lng','northam_enquiry_form'=>'_northam_enquiry_form'];
     foreach($f as $k=>$m){
         if(isset($_POST[$k])){
             $v=sanitize_textarea_field($_POST[$k]);
-            if(strpos($m,'website')!==false)$v=esc_url_raw($_POST[$k]);
+            if(strpos($m,'website')!==false||strpos($m,'map_url')!==false)$v=esc_url_raw($_POST[$k]);
             elseif(strpos($m,'email')!==false)$v=sanitize_email($_POST[$k]);
             elseif(strpos($m,'capacity')!==false||strpos($m,'form')!==false)$v=absint($_POST[$k]);
             update_post_meta($post_id,$m,$v);
@@ -495,7 +509,7 @@ function northam_regular_classes_meta_box_callback( $post ) {
     wp_nonce_field( 'northam_regular_classes_save', 'northam_regular_classes_nonce' );
 
     $classes_json = get_post_meta( $post->ID, '_northam_regular_classes', true );
-    $classes = $classes_json ? json_decode( $classes_json, true ) : array();
+    $classes = $classes_json ? json_decode( wp_unslash( $classes_json ), true ) : array();
     $source_url = get_post_meta( $post->ID, '_northam_classes_source_url', true );
 
     $days = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
@@ -511,14 +525,14 @@ function northam_regular_classes_meta_box_callback( $post ) {
         <div style="display: flex; gap: 10px; align-items: center;">
             <input type="url" id="northam_classes_source_url" name="northam_classes_source_url"
                    value="<?php echo esc_url( $source_url ); ?>"
-                   placeholder="https://www.northamtowncouncil.gov.uk/..."
+                   placeholder="https://example.com/classes-schedule"
                    style="flex: 1;">
             <button type="button" id="northam-fetch-classes" class="button button-primary">
                 Fetch Classes
             </button>
         </div>
         <p class="description" style="margin-top: 8px;">
-            Enter a Northam Town Council URL to auto-populate classes. Click "Fetch Classes" to import, then save the post.
+            Enter a URL with a classes schedule to auto-populate. Click "Fetch Classes" to import, then save the post.
         </p>
         <div id="northam-fetch-status" style="margin-top: 10px; display: none;"></div>
     </div>
@@ -684,8 +698,10 @@ function northam_regular_classes_meta_box_callback( $post ) {
  * Save Regular Classes meta
  */
 function northam_save_regular_classes_meta( $post_id ) {
-    if ( ! isset( $_POST['northam_regular_classes_nonce'] ) ||
-         ! wp_verify_nonce( $_POST['northam_regular_classes_nonce'], 'northam_regular_classes_save' ) ) {
+    if ( ! isset( $_POST['northam_regular_classes_nonce'] ) ) {
+        return;
+    }
+    if ( ! wp_verify_nonce( $_POST['northam_regular_classes_nonce'], 'northam_regular_classes_save' ) ) {
         return;
     }
 
@@ -711,6 +727,7 @@ function northam_save_regular_classes_meta( $post_id ) {
                         $classes[ $day ][] = array(
                             'time'      => sanitize_text_field( $class['time'] ?? '' ),
                             'name'      => sanitize_text_field( $class['name'] ?? '' ),
+                            'category'  => sanitize_text_field( $class['category'] ?? '' ),
                             'frequency' => sanitize_text_field( $class['frequency'] ?? 'Weekly' ),
                             'contact'   => sanitize_text_field( $class['contact'] ?? '' ),
                         );
@@ -803,6 +820,26 @@ add_action('save_post_northam_group','northam_save_group_meta');
 /**
  * Register meta box for Events Manager events
  */
+function northam_remove_events_manager_meta_boxes() {
+    $contexts = array( 'normal', 'advanced', 'side' );
+    $boxes = array(
+        'em-event-where',       // Where
+        'em-event-attributes',  // Attributes
+        'tagsdiv-event-tags',   // Events Tags
+        // fallbacks (standard WP IDs, in case)
+        'pageparentdiv',
+        'commentstatusdiv',
+        'commentsdiv',
+        'tagsdiv-post_tag',
+    );
+    foreach ( $boxes as $id ) {
+        foreach ( $contexts as $ctx ) {
+            remove_meta_box( $id, 'event', $ctx );
+        }
+    }
+}
+add_action( 'add_meta_boxes', 'northam_remove_events_manager_meta_boxes', 99 );
+
 function northam_register_event_meta_box() {
     if ( ! class_exists( 'EM_Events' ) ) {
         return;
@@ -856,23 +893,41 @@ function northam_event_venue_meta_box_callback( $post ) {
     $venue_id = get_post_meta( $post->ID, '_northam_event_venue', true );
     $venue_type = get_post_meta( $post->ID, '_northam_event_venue_type', true );
 
-    // Get all businesses
-    $businesses = get_posts( array(
-        'post_type' => 'northam_business',
-        'posts_per_page' => -1,
-        'orderby' => 'title',
-        'order' => 'ASC',
-        'post_status' => 'publish',
-    ) );
+    // For restricted roles, only show their managed listings in the dropdown.
+    // Admins see everything.
+    $current_user     = wp_get_current_user();
+    $restricted_roles = array( 'business_manager', 'venue_manager', 'group_admin' );
+    $is_restricted    = ! empty( array_intersect( $restricted_roles, $current_user->roles ) );
 
-    // Get all community venues
-    $venues = get_posts( array(
-        'post_type' => 'northam_venue',
+    $business_query_args = array(
+        'post_type'      => 'northam_business',
         'posts_per_page' => -1,
-        'orderby' => 'title',
-        'order' => 'ASC',
-        'post_status' => 'publish',
-    ) );
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+        'post_status'    => 'publish',
+    );
+    $venue_query_args = array(
+        'post_type'      => 'northam_venue',
+        'posts_per_page' => -1,
+        'orderby'        => 'title',
+        'order'          => 'ASC',
+        'post_status'    => 'publish',
+    );
+
+    if ( $is_restricted ) {
+        $managed = get_user_meta( $current_user->ID, '_northam_managed_posts', true );
+        $managed = ( is_array( $managed ) && ! empty( $managed ) )
+            ? array_map( 'intval', $managed )
+            : array( 0 );
+        $business_query_args['post__in'] = $managed;
+        $venue_query_args['post__in']    = $managed;
+    }
+
+    // Get businesses
+    $businesses = get_posts( $business_query_args );
+
+    // Get community venues
+    $venues = get_posts( $venue_query_args );
     ?>
     <p>
         <label for="northam_event_venue"><strong><?php esc_html_e( 'Select Business or Venue Hosting This Event', 'northam' ); ?></strong></label>
@@ -956,3 +1011,88 @@ function northam_save_event_meta( $post_id ) {
     }
 }
 add_action( 'save_post_event', 'northam_save_event_meta' );
+
+// ============================================================
+// EVENTS META BOX ON LISTING EDIT SCREENS
+// ============================================================
+
+function northam_register_listing_events_meta_box() {
+    $post_types = array( 'northam_business', 'northam_venue', 'northam_group' );
+    foreach ( $post_types as $post_type ) {
+        add_meta_box(
+            'northam_listing_events',
+            'Events',
+            'northam_listing_events_meta_box_callback',
+            $post_type,
+            'normal',
+            'default'
+        );
+    }
+}
+add_action( 'add_meta_boxes', 'northam_register_listing_events_meta_box' );
+
+function northam_listing_events_meta_box_callback( $post ) {
+    $post_id = $post->ID;
+
+    $events = get_posts( array(
+        'post_type'      => 'event',
+        'post_status'    => array( 'publish', 'pending', 'draft', 'future' ),
+        'posts_per_page' => -1,
+        'meta_query'     => array(
+            array(
+                'key'     => '_northam_event_venue',
+                'value'   => $post_id,
+                'compare' => '=',
+            ),
+        ),
+        'orderby' => 'date',
+        'order'   => 'DESC',
+    ) );
+
+    echo '<style>
+        .northam-events-list { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        .northam-events-list th { text-align: left; padding: 6px 10px; background: #f0f0f0; font-size: 12px; font-weight: 600; border-bottom: 1px solid #ddd; }
+        .northam-events-list td { padding: 6px 10px; font-size: 13px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        .northam-events-list tr:last-child td { border-bottom: none; }
+        .northam-event-status { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .northam-event-status.publish { background: #d4edda; color: #155724; }
+        .northam-event-status.draft { background: #fff3cd; color: #856404; }
+        .northam-event-status.pending { background: #cce5ff; color: #004085; }
+        .northam-event-status.future { background: #e2d9f3; color: #432874; }
+        .northam-add-event-btn { display: inline-block; margin-top: 4px; padding: 6px 14px; background: #2271b1; color: #fff; text-decoration: none; border-radius: 3px; font-size: 13px; }
+        .northam-add-event-btn:hover { background: #135e96; color: #fff; }
+        .northam-events-empty { color: #777; font-size: 13px; margin-bottom: 12px; }
+    </style>';
+
+    if ( ! empty( $events ) ) {
+        echo '<table class="northam-events-list">';
+        echo '<thead><tr><th>Event Title</th><th>Date</th><th>Status</th><th></th></tr></thead>';
+        echo '<tbody>';
+        foreach ( $events as $event ) {
+            $edit_link   = get_edit_post_link( $event->ID );
+            $event_date  = get_post_meta( $event->ID, '_event_start_date', true );
+            if ( empty( $event_date ) ) {
+                $event_date = get_the_date( 'd M Y', $event );
+            }
+            $status      = $event->post_status;
+            $status_label = ucfirst( $status );
+            echo '<tr>';
+            echo '<td><a href="' . esc_url( $edit_link ) . '">' . esc_html( $event->post_title ) . '</a></td>';
+            echo '<td>' . esc_html( $event_date ) . '</td>';
+            echo '<td><span class="northam-event-status ' . esc_attr( $status ) . '">' . esc_html( $status_label ) . '</span></td>';
+            echo '<td><a href="' . esc_url( $edit_link ) . '">Edit</a></td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+    } else {
+        echo '<p class="northam-events-empty">No events linked to this listing yet.</p>';
+    }
+
+    $new_event_url = add_query_arg( array(
+        'post_type'             => 'event',
+        'northam_event_venue'   => $post_id,
+    ), admin_url( 'post-new.php' ) );
+
+    echo '<a href="' . esc_url( $new_event_url ) . '" class="northam-add-event-btn">+ Add New Event</a>';
+    echo '<p style="font-size:11px;color:#999;margin-top:8px;">Events are linked to this listing via the &ldquo;Listing / Venue&rdquo; field on the event edit screen.</p>';
+}

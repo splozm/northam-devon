@@ -20,6 +20,15 @@
 .northam-meta-table .large-text { width: 100% !important; max-width: 500px; }
 .northam-meta-table .description { color: #646970; font-size: 13px; font-style: italic; margin-top: 5px; }
 
+/* Hide unwanted meta boxes on event edit screen */
+#em-event-where,
+#em-event-attributes,
+#tagsdiv-event-tags,
+#_kad_classic_meta_control { display: none !important; }
+
+/* Hide Screen Options tab on event edit screen */
+.post-type-event #screen-options-link-wrap { display: none !important; }
+
 #adminmenu .menu-icon-northam_business div.wp-menu-image:before,
 #adminmenu .menu-icon-northam_venue div.wp-menu-image:before { color: #287878; }
 #adminmenu .menu-icon-northam_directory div.wp-menu-image:before { color: #b8960a; }

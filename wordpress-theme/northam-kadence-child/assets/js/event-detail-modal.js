@@ -63,17 +63,23 @@
 			modal.querySelector('.event-modal-title').textContent = eventData.title;
 
 			// Update details
-			modal.querySelector('.detail-date').textContent = eventData.date;
-			modal.querySelector('.detail-time').textContent = eventData.time;
-			modal.querySelector('.detail-venue').textContent = eventData.venue;
+			modal.querySelector('.detail-date').textContent = eventData.date || '—';
+			modal.querySelector('.detail-time').textContent = eventData.time || '—';
+			modal.querySelector('.detail-venue').textContent = eventData.venue || '—';
 
 			// Update description
-			modal.querySelector('.event-modal-description').textContent = eventData.description;
+			modal.querySelector('.event-modal-description').textContent = eventData.description || 'No description available.';
 
-			// Update map link
+			// Update map link - use stored URL if available, otherwise generate search URL
 			const mapLink = modal.querySelector('.detail-venue-link');
-			const searchQuery = encodeURIComponent(eventData.venue + ', Northam, Devon');
-			mapLink.href = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+			if (eventData.mapUrl && eventData.mapUrl.length > 0) {
+				mapLink.href = eventData.mapUrl;
+			} else if (eventData.venue) {
+				const searchQuery = encodeURIComponent(eventData.venue + ', Northam, Devon');
+				mapLink.href = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+			} else {
+				mapLink.href = '#';
+			}
 
 			// Show modal
 			modal.classList.add('modal-open');
@@ -112,7 +118,8 @@
 						time: dataElement.dataset.eventTime || '',
 						venue: dataElement.dataset.eventVenue || '',
 						type: dataElement.dataset.eventType || 'community',
-						description: dataElement.dataset.eventDescription || ''
+						description: dataElement.dataset.eventDescription || '',
+						mapUrl: dataElement.dataset.eventMapUrl || ''
 					};
 				} else {
 					// Fallback: extract from DOM
@@ -122,7 +129,8 @@
 						venue: this.querySelector('.mobile-event-meta span:last-child')?.textContent || '',
 						date: '',
 						type: this.className.match(/northam-event-(\w+)/)?.[1] || 'community',
-						description: this.querySelector('.mobile-event-description')?.textContent || ''
+						description: this.querySelector('.mobile-event-description')?.textContent || '',
+						mapUrl: ''
 					};
 				}
 

@@ -17,7 +17,7 @@ get_header();
 
     <!-- Wave decoration -->
     <div class="northam-hero-wave">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
             <path d="M0 60L48 55C96 50 192 40 288 45C384 50 480 70 576 75C672 80 768 70 864 60C960 50 1056 40 1152 45C1248 50 1344 70 1392 80L1440 90V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0V60Z" fill="hsl(50, 30%, 97%)" fill-opacity="0.5"/>
             <path d="M0 80L48 75C96 70 192 60 288 65C384 70 480 90 576 95C672 100 768 90 864 80C960 70 1056 60 1152 65C1248 70 1344 90 1392 100L1440 110V120H1392C1344 120 1248 120 1152 120C1056 120 960 120 864 120C768 120 672 120 576 120C480 120 384 120 288 120C192 120 96 120 48 120H0V80Z" fill="hsl(50, 30%, 97%)"/>
         </svg>
@@ -96,7 +96,7 @@ get_header();
                 <h2 class="northam-section-title">Upcoming Events</h2>
             </div>
             <a href="<?php echo esc_url( home_url( '/events/' ) ); ?>" class="northam-btn northam-btn-outline">
-                View All Events
+                View All Events and Classes
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
@@ -277,7 +277,7 @@ get_header();
                         </svg>
                         Explore Groups
                     </a>
-                    <a href="<?php echo esc_url( home_url( '/history/' ) ); ?>" class="northam-btn northam-btn-outline northam-btn-lg" style="border-color: rgba(255,255,255,0.5); color: white;">
+                    <a href="https://www.facebook.com/groups/262287480518567/" class="northam-btn northam-btn-outline northam-btn-lg" style="border-color: rgba(255,255,255,0.5); color: white;" target="_blank" rel="noopener noreferrer">
                         Our History
                     </a>
                 </div>

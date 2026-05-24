@@ -152,7 +152,7 @@ while ( have_posts() ) :
 				<!-- Regular Classes Section -->
 				<?php
 				$classes_json = get_post_meta( get_the_ID(), '_northam_regular_classes', true );
-				$classes = $classes_json ? json_decode( $classes_json, true ) : array();
+				$classes = $classes_json ? json_decode( wp_unslash( $classes_json ), true ) : array();
 
 				if ( ! empty( $classes ) ) :
 				?>
@@ -366,54 +366,6 @@ while ( have_posts() ) :
 					</div>
 				</div>
 				<?php endif; ?>
-
-				<!-- Enquiry Form Section -->
-				<div class="northam-enquiry-section">
-					<h2>
-						<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary">
-							<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-							<polyline points="22,6 12,13 2,6"></polyline>
-						</svg>
-						Enquire About This Venue
-					</h2>
-
-					<div data-fs-success style="color: var(--northam-primary); font-weight: 500; padding: 1rem; background: #d4edda; border-radius: 0.5rem; display: none;"></div>
-					<div data-fs-error style="color: #dc3545; padding: 1rem; background: #f8d7da; border-radius: 0.5rem; display: none;"></div>
-
-					<form id="venue-enquiry-form" style="display: flex; flex-direction: column; gap: 1rem;">
-						<input type="hidden" name="form_type" value="venue_enquiry" />
-						<input type="hidden" name="venue_name" value="<?php echo esc_attr( get_the_title() ); ?>" />
-						<input type="hidden" name="page_url" id="venue-page-url" />
-						<input type="text" name="_gotcha" style="display: none;" />
-
-						<div>
-							<label for="venue-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Your Name</label>
-							<input type="text" id="venue-name" name="name" class="northam-form-input" required data-fs-field />
-							<span data-fs-error="name" style="color: #dc3545; font-size: 0.875rem;"></span>
-						</div>
-
-						<div>
-							<label for="venue-email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Your Email</label>
-							<input type="email" id="venue-email" name="email" class="northam-form-input" required data-fs-field />
-							<span data-fs-error="email" style="color: #dc3545; font-size: 0.875rem;"></span>
-						</div>
-
-						<div>
-							<label for="venue-message" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Message</label>
-							<textarea id="venue-message" name="message" class="northam-form-textarea" rows="4" placeholder="Tell us about your event, preferred dates, expected guests, etc." required data-fs-field></textarea>
-							<span data-fs-error="message" style="color: #dc3545; font-size: 0.875rem;"></span>
-						</div>
-
-						<button type="submit" class="northam-btn northam-btn-primary" data-fs-submit-btn>Send Enquiry</button>
-					</form>
-
-					<script>
-						document.getElementById('venue-page-url').value = window.location.href;
-						window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
-						formspree('initForm', { formElement: '#venue-enquiry-form', formId: 'xgorqwyn' });
-					</script>
-					<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
-				</div>
 			</div>
 
 			<!-- Right Column - Sidebar -->

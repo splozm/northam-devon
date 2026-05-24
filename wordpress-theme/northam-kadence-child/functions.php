@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.0.0' );
+define( 'NORTHAM_VERSION', '1.0.1' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -343,7 +343,7 @@ add_action( 'wp_enqueue_scripts', 'northam_enqueue_styles', 20 );
  */
 function northam_admin_styles() {
     $screen = get_current_screen();
-    $northam_post_types = array( 'northam_business', 'northam_venue', 'northam_attraction', 'northam_group' );
+    $northam_post_types = array( 'northam_business', 'northam_venue', 'northam_attraction', 'northam_group', 'event' );
 
     if ( $screen && in_array( $screen->post_type, $northam_post_types, true ) ) {
         wp_enqueue_style(
@@ -414,6 +414,8 @@ function northam_register_post_types() {
         'menu_position'       => 20,
         'supports'            => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
         'show_in_rest'        => false,
+        'capability_type'     => array( 'northam_business', 'northam_businesses' ),
+        'map_meta_cap'        => true,
     ) );
 
     // -------------------------------------------------------------------------
@@ -592,21 +594,24 @@ add_action( 'init', 'northam_register_taxonomies' );
  */
 function northam_register_roles() {
     // Only run once
-    if ( get_option( 'northam_roles_version' ) === '1.0.0' ) {
+    if ( get_option( 'northam_roles_version' ) === '1.0.2' ) {
         return;
     }
 
     // -------------------------------------------------------------------------
     // Business Manager Role
+    // edit_others_northam_businesses is required so WordPress does NOT add
+    // "AND post_author = user_id" to the admin list query (all posts are admin-authored).
+    // Access to specific posts is controlled by northam_map_managed_post_caps instead.
     // -------------------------------------------------------------------------
     add_role( 'business_manager', __( 'Business Manager', 'northam' ), array(
-        'read'                       => true,
-        'upload_files'               => true,
-        // Business capabilities (own only)
-        'edit_northam_businesses'    => true,
+        'read'                              => true,
+        'upload_files'                      => true,
+        'edit_northam_businesses'           => true,
+        'edit_others_northam_businesses'    => true,
         'edit_published_northam_businesses' => true,
-        'publish_northam_businesses' => true,
-        'delete_northam_businesses'  => true,
+        'publish_northam_businesses'        => true,
+        'delete_northam_businesses'         => true,
         // Events Manager
         'edit_events'              => true,
         'edit_published_events'    => true,
@@ -617,18 +622,23 @@ function northam_register_roles() {
         'edit_recurring_events'    => true,
         'publish_recurring_events' => true,
     ) );
+    // Ensure cap is present even if role already existed
+    $bm = get_role( 'business_manager' );
+    if ( $bm ) {
+        $bm->add_cap( 'edit_others_northam_businesses' );
+    }
 
     // -------------------------------------------------------------------------
     // Venue Manager Role
     // -------------------------------------------------------------------------
     add_role( 'venue_manager', __( 'Venue Manager', 'northam' ), array(
-        'read'                     => true,
-        'upload_files'             => true,
-        // Venue capabilities (own only)
-        'edit_northam_venues'      => true,
-        'edit_published_northam_venues' => true,
-        'publish_northam_venues'   => true,
-        'delete_northam_venues'    => true,
+        'read'                           => true,
+        'upload_files'                   => true,
+        'edit_northam_venues'            => true,
+        'edit_others_northam_venues'     => true,
+        'edit_published_northam_venues'  => true,
+        'publish_northam_venues'         => true,
+        'delete_northam_venues'          => true,
         // Events Manager
         'edit_events'              => true,
         'edit_published_events'    => true,
@@ -639,18 +649,22 @@ function northam_register_roles() {
         'edit_recurring_events'    => true,
         'publish_recurring_events' => true,
     ) );
+    $vm = get_role( 'venue_manager' );
+    if ( $vm ) {
+        $vm->add_cap( 'edit_others_northam_venues' );
+    }
 
     // -------------------------------------------------------------------------
     // Community Group Admin Role
     // -------------------------------------------------------------------------
     add_role( 'group_admin', __( 'Community Group Admin', 'northam' ), array(
-        'read'                     => true,
-        'upload_files'             => true,
-        // Group capabilities (own only)
-        'edit_northam_groups'      => true,
+        'read'                          => true,
+        'upload_files'                  => true,
+        'edit_northam_groups'           => true,
+        'edit_others_northam_groups'    => true,
         'edit_published_northam_groups' => true,
-        'publish_northam_groups'   => true,
-        'delete_northam_groups'    => true,
+        'publish_northam_groups'        => true,
+        'delete_northam_groups'         => true,
         // Events Manager
         'edit_events'              => true,
         'edit_published_events'    => true,
@@ -661,6 +675,10 @@ function northam_register_roles() {
         'edit_recurring_events'    => true,
         'publish_recurring_events' => true,
     ) );
+    $ga = get_role( 'group_admin' );
+    if ( $ga ) {
+        $ga->add_cap( 'edit_others_northam_groups' );
+    }
 
     // -------------------------------------------------------------------------
     // History Writer Role
@@ -726,12 +744,13 @@ function northam_register_roles() {
         $admin->add_cap( 'edit_published_northam_groups' );
     }
 
-    update_option( 'northam_roles_version', '1.0.0' );
+    update_option( 'northam_roles_version', '1.0.2' );
 }
 add_action( 'init', 'northam_register_roles' );
 
 /**
- * Restrict users to editing only their own content
+ * Restrict users to editing only their assigned managed posts.
+ * Uses _northam_managed_posts user meta (array of post IDs) set by admin.
  */
 function northam_restrict_user_content( $query ) {
     if ( ! is_admin() || ! $query->is_main_query() ) {
@@ -741,19 +760,254 @@ function northam_restrict_user_content( $query ) {
     $current_user = wp_get_current_user();
     $restricted_roles = array( 'business_manager', 'venue_manager', 'group_admin' );
 
-    // Check if user has a restricted role
-    $has_restricted_role = array_intersect( $restricted_roles, $current_user->roles );
+    if ( empty( array_intersect( $restricted_roles, $current_user->roles ) ) ) {
+        return;
+    }
 
-    if ( ! empty( $has_restricted_role ) ) {
-        $post_type = $query->get( 'post_type' );
-        $restricted_post_types = array( 'northam_business', 'northam_venue', 'northam_group', 'event' );
+    $post_type = $query->get( 'post_type' );
 
-        if ( in_array( $post_type, $restricted_post_types, true ) ) {
-            $query->set( 'author', $current_user->ID );
+    // Events: user owns what they create — let WordPress's natural author constraint handle it
+    if ( $post_type === 'event' ) {
+        $query->set( 'author', $current_user->ID );
+        return;
+    }
+
+    $managed_post_types = array( 'northam_business', 'northam_venue', 'northam_group' );
+
+    if ( ! in_array( $post_type, $managed_post_types, true ) ) {
+        return;
+    }
+
+    // Listings: admin-created, restrict to posts explicitly assigned to this user
+    $managed = get_user_meta( $current_user->ID, '_northam_managed_posts', true );
+    $managed = ( is_array( $managed ) && ! empty( $managed ) )
+        ? array_map( 'intval', $managed )
+        : array( 0 ); // 0 matches nothing — user sees empty list if no posts assigned
+
+    $query->set( 'post__in', $managed );
+}
+add_action( 'pre_get_posts', 'northam_restrict_user_content' );
+
+/**
+ * Grant restricted users capability to edit/delete their assigned managed posts.
+ * Allows direct URL access to edit screens for assigned posts.
+ */
+function northam_map_managed_post_caps( $caps, $cap, $user_id, $args ) {
+    $user = get_userdata( $user_id );
+    if ( ! $user ) {
+        return $caps;
+    }
+
+    // Administrators always have full access — check role directly to avoid infinite recursion
+    if ( in_array( 'administrator', $user->roles, true ) ) {
+        $admin_caps = array( 'edit_post', 'delete_post', 'read_post', 'publish_post' );
+        if ( in_array( $cap, $admin_caps, true ) ) {
+            return array( 'exist' );
+        }
+        return $caps;
+    }
+
+    $restricted_roles = array( 'business_manager', 'venue_manager', 'group_admin' );
+
+    if ( empty( array_intersect( $restricted_roles, $user->roles ) ) ) {
+        return $caps;
+    }
+
+    $checked_caps = array( 'edit_post', 'delete_post', 'read_post' );
+    if ( ! in_array( $cap, $checked_caps, true ) || empty( $args[0] ) ) {
+        return $caps;
+    }
+
+    $post_id   = (int) $args[0];
+    $post      = get_post( $post_id );
+
+    if ( ! $post ) {
+        return array( 'do_not_allow' );
+    }
+
+    // Events: user can edit events they authored themselves
+    if ( $post->post_type === 'event' ) {
+        if ( (int) $post->post_author === (int) $user_id ) {
+            return array( 'exist' );
+        }
+        return array( 'do_not_allow' );
+    }
+
+    // Listings (business/venue/group): must be in the assigned managed posts list
+    $managed = get_user_meta( $user_id, '_northam_managed_posts', true );
+    if ( is_array( $managed ) && in_array( $post_id, array_map( 'intval', $managed ), true ) ) {
+        return array( 'exist' );
+    }
+
+    return array( 'do_not_allow' );
+}
+add_filter( 'map_meta_cap', 'northam_map_managed_post_caps', 10, 4 );
+
+/**
+ * Dynamically grant administrators all northam_* capabilities.
+ * Avoids dependency on DB-stored role caps for the admin menu to appear.
+ * Safe: modifies $allcaps array directly — no recursive capability checks.
+ */
+function northam_admin_grant_northam_caps( $allcaps, $caps, $args, $user ) {
+    if ( ! empty( $allcaps['administrator'] ) ) {
+        foreach ( $caps as $cap ) {
+            if ( strpos( $cap, 'northam_' ) !== false ) {
+                $allcaps[ $cap ] = true;
+            }
+        }
+    }
+    return $allcaps;
+}
+add_filter( 'user_has_cap', 'northam_admin_grant_northam_caps', 10, 4 );
+
+/**
+ * Ensure restricted roles have edit_others_* caps at runtime.
+ *
+ * Without edit_others_northam_venues (etc.), WordPress adds AND post_author = user_id
+ * to every admin list query. Since all posts are admin-authored, the list is always empty.
+ * We grant edit_others_* here so WP skips that author constraint.
+ * Actual per-post access control is handled by northam_map_managed_post_caps instead.
+ */
+function northam_ensure_edit_others_caps( $allcaps, $caps, $args, $user ) {
+    $restricted_roles = array( 'venue_manager', 'business_manager', 'group_admin' );
+    if ( empty( array_intersect( $restricted_roles, $user->roles ) ) ) {
+        return $allcaps;
+    }
+
+    if ( in_array( 'venue_manager', $user->roles, true ) ) {
+        $allcaps['edit_others_northam_venues'] = true;
+    }
+    if ( in_array( 'business_manager', $user->roles, true ) ) {
+        $allcaps['edit_others_northam_businesses'] = true;
+    }
+    if ( in_array( 'group_admin', $user->roles, true ) ) {
+        $allcaps['edit_others_northam_groups'] = true;
+    }
+
+    // Grant event caps at runtime — roles may have been created before these caps
+    // were added to the role definition, so existing DB records may be missing them.
+    $event_caps = array(
+        'edit_events',
+        'edit_published_events',
+        'publish_events',
+        'delete_events',
+        'edit_locations',
+        'publish_locations',
+        'edit_recurring_events',
+        'publish_recurring_events',
+    );
+    foreach ( $event_caps as $cap ) {
+        $allcaps[ $cap ] = true;
+    }
+
+    return $allcaps;
+}
+add_filter( 'user_has_cap', 'northam_ensure_edit_others_caps', 10, 4 );
+
+/**
+ * Add "Managed Listings" section to user profile edit screen.
+ * Admin selects which posts a community member can manage.
+ */
+function northam_user_managed_posts_field( $user ) {
+    if ( ! current_user_can( 'edit_users' ) ) {
+        return;
+    }
+
+    $managed = get_user_meta( $user->ID, '_northam_managed_posts', true );
+    $managed = is_array( $managed ) ? array_map( 'intval', $managed ) : array();
+
+    // Events are excluded — users own events they create themselves (no manual assignment needed)
+    $post_types = array(
+        'northam_business' => 'Businesses',
+        'northam_venue'    => 'Community Venues',
+        'northam_group'    => 'Community Groups',
+    );
+
+    echo '<h2>Managed Listings</h2>';
+    echo '<p class="description">Select which listings this user can view and edit in the admin.</p>';
+    echo '<table class="form-table"><tbody>';
+
+    foreach ( $post_types as $post_type => $label ) {
+        $posts = get_posts( array(
+            'post_type'      => $post_type,
+            'post_status'    => array( 'publish', 'draft' ),
+            'posts_per_page' => -1,
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ) );
+
+        if ( empty( $posts ) ) {
+            continue;
+        }
+
+        echo '<tr>';
+        echo '<th><label>' . esc_html( $label ) . '</label></th>';
+        echo '<td>';
+        foreach ( $posts as $post ) {
+            $checked = in_array( $post->ID, $managed, true ) ? 'checked="checked"' : '';
+            echo '<label style="display:block;margin-bottom:4px;">';
+            echo '<input type="checkbox" name="northam_managed_posts[]" value="' . esc_attr( $post->ID ) . '" ' . $checked . '> ';
+            echo esc_html( $post->post_title );
+            echo '</label>';
+        }
+        echo '</td>';
+        echo '</tr>';
+    }
+
+    echo '</tbody></table>';
+    wp_nonce_field( 'northam_managed_posts_save', 'northam_managed_posts_nonce' );
+}
+add_action( 'show_user_profile', 'northam_user_managed_posts_field' );
+add_action( 'edit_user_profile', 'northam_user_managed_posts_field' );
+
+/**
+ * Save Managed Listings from user profile.
+ */
+function northam_save_user_managed_posts( $user_id ) {
+    if ( ! current_user_can( 'edit_users' ) ) {
+        return;
+    }
+
+    if ( ! isset( $_POST['northam_managed_posts_nonce'] ) ||
+        ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['northam_managed_posts_nonce'] ) ), 'northam_managed_posts_save' ) ) {
+        return;
+    }
+
+    $managed = array();
+    if ( ! empty( $_POST['northam_managed_posts'] ) && is_array( $_POST['northam_managed_posts'] ) ) {
+        $managed = array_map( 'intval', $_POST['northam_managed_posts'] );
+        $managed = array_filter( $managed ); // remove zeros
+        $managed = array_values( $managed );
+    }
+
+    update_user_meta( $user_id, '_northam_managed_posts', $managed );
+}
+add_action( 'personal_options_update', 'northam_save_user_managed_posts' );
+add_action( 'edit_user_profile_update', 'northam_save_user_managed_posts' );
+
+/**
+ * Restrict admin menus for community member roles.
+ * Each role sees only what's relevant to them.
+ */
+function northam_restrict_admin_menus() {
+    $user = wp_get_current_user();
+
+    $role_menus = array(
+        'business_manager' => array( 'edit-comments.php', 'tools.php', 'options-general.php', 'edit.php?post_type=northam_venue', 'edit.php?post_type=northam_group', 'edit.php?post_type=northam_attraction', 'edit.php?post_type=page' ),
+        'venue_manager'    => array( 'edit-comments.php', 'tools.php', 'options-general.php', 'edit.php?post_type=northam_business', 'edit.php?post_type=northam_group', 'edit.php?post_type=northam_attraction', 'edit.php?post_type=page' ),
+        'group_admin'      => array( 'edit-comments.php', 'tools.php', 'options-general.php', 'edit.php?post_type=northam_business', 'edit.php?post_type=northam_venue', 'edit.php?post_type=northam_attraction', 'edit.php?post_type=page' ),
+    );
+
+    foreach ( $role_menus as $role => $menus_to_remove ) {
+        if ( in_array( $role, $user->roles, true ) ) {
+            foreach ( $menus_to_remove as $menu ) {
+                remove_menu_page( $menu );
+            }
+            break;
         }
     }
 }
-add_action( 'pre_get_posts', 'northam_restrict_user_content' );
+add_action( 'admin_menu', 'northam_restrict_admin_menus', 999 );
 
 /**
  * =============================================================================
@@ -1319,11 +1573,6 @@ function northam_fetch_classes_ajax() {
         wp_send_json_error( array( 'message' => 'No URL provided.' ) );
     }
 
-    // Validate it's a Northam Town Council URL
-    if ( strpos( $url, 'northamtowncouncil.gov.uk' ) === false ) {
-        wp_send_json_error( array( 'message' => 'URL must be from northamtowncouncil.gov.uk' ) );
-    }
-
     // Fetch the page
     $response = wp_remote_get( $url, array(
         'timeout' => 30,
@@ -1340,11 +1589,26 @@ function northam_fetch_classes_ajax() {
         wp_send_json_error( array( 'message' => 'Empty response from URL.' ) );
     }
 
-    // Parse the HTML to extract classes
-    $classes = northam_parse_classes_html( $html );
+    // Detect which parser to use based on URL domain
+    $parsed_url = parse_url( $url );
+    $host = isset( $parsed_url['host'] ) ? strtolower( $parsed_url['host'] ) : '';
+
+    if ( strpos( $host, 'northamcommunitycentre.co.uk' ) !== false ) {
+        // Use community centre parser (calendar diary format)
+        $classes = northam_parse_community_centre_html( $html );
+    } elseif ( strpos( $host, 'northamtowncouncil.gov.uk' ) !== false ) {
+        // Use town council parser (h5/h6 format)
+        $classes = northam_parse_town_council_html( $html );
+    } else {
+        // Try both parsers and use whichever returns results
+        $classes = northam_parse_town_council_html( $html );
+        if ( empty( $classes ) ) {
+            $classes = northam_parse_community_centre_html( $html );
+        }
+    }
 
     if ( empty( $classes ) ) {
-        wp_send_json_error( array( 'message' => 'No classes found on the page. The page structure may have changed.' ) );
+        wp_send_json_error( array( 'message' => 'No classes found on the page. The page structure may not be supported.' ) );
     }
 
     wp_send_json_success( array( 'classes' => $classes ) );
@@ -1356,7 +1620,7 @@ add_action( 'wp_ajax_northam_fetch_classes', 'northam_fetch_classes_ajax' );
  *
  * Structure: <h5>MONDAYS</h5> followed by <h6>Class Name (Time) Frequency <a>Contact</a></h6>
  */
-function northam_parse_classes_html( $html ) {
+function northam_parse_town_council_html( $html ) {
     $classes = array();
 
     // Day mapping (uppercase to proper case)
@@ -1433,6 +1697,168 @@ function northam_parse_classes_html( $html ) {
     }
 
     return $classes;
+}
+
+/**
+ * Parse HTML from Northam Community Centre hall diary page
+ *
+ * Structure: Uses Simple Calendar plugin (simcal) with li.simcal-event elements
+ * Each event has: <span class="simcal-event-title"> for name, and date/time spans
+ * Extracts weekly recurring classes by de-duplicating entries that appear on the same day of week
+ */
+function northam_parse_community_centre_html( $html ) {
+    $classes = array();
+    $seen_classes = array(); // Track unique classes by day + name to avoid duplicates
+
+    // Use DOMDocument to parse HTML
+    libxml_use_internal_errors( true );
+    $dom = new DOMDocument();
+    @$dom->loadHTML( $html );
+    libxml_clear_errors();
+
+    $xpath = new DOMXPath( $dom );
+
+    // Find simcal event list items specifically (the calendar plugin structure)
+    $event_items = $xpath->query( '//li[contains(@class, "simcal-event")]' );
+
+    if ( $event_items->length === 0 ) {
+        // Fallback: try regular li elements with strong tags
+        $event_items = $xpath->query( '//li[.//strong]' );
+    }
+
+    $processed = 0;
+    foreach ( $event_items as $li ) {
+        $full_text = trim( $li->textContent );
+
+        // Clean up whitespace
+        $full_text = preg_replace( '/\s+/', ' ', $full_text );
+
+        if ( empty( $full_text ) || strlen( $full_text ) < 10 ) {
+            continue;
+        }
+
+        // Extract activity name - try simcal-event-title span first, then strong tag
+        $activity_name = '';
+        $title_spans = $xpath->query( './/span[contains(@class, "simcal-event-title")]', $li );
+        if ( $title_spans->length > 0 ) {
+            $activity_name = trim( $title_spans->item( 0 )->textContent );
+        } else {
+            $strong_elements = $li->getElementsByTagName( 'strong' );
+            if ( $strong_elements->length > 0 ) {
+                $activity_name = trim( $strong_elements->item( 0 )->textContent );
+            }
+        }
+
+        if ( empty( $activity_name ) ) {
+            $processed++;
+            continue;
+        }
+
+        // Skip entries that are clearly not classes
+        if ( stripos( $activity_name, 'cleaning' ) !== false ||
+             ( stripos( $activity_name, 'private' ) !== false && stripos( $activity_name, 'hire' ) !== false ) ) {
+            $processed++;
+            continue;
+        }
+
+        // Extract day of week and time from the text
+        $day_of_week = '';
+        $time_range = '';
+
+        // Match day of week
+        if ( preg_match( '/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)/i', $full_text, $day_match ) ) {
+            $day_of_week = ucfirst( strtolower( $day_match[1] ) );
+        }
+
+        // Match time range (e.g., "2:00 pm - 3:00 pm" or "11:30 am - 12:30 pm")
+        if ( preg_match( '/(\d{1,2}:\d{2}\s*(?:am|pm))\s*[-–]\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i', $full_text, $time_match ) ) {
+            // Convert both times to 24-hour format
+            $start_time = northam_convert_to_24hr( $time_match[1] );
+            $end_time = northam_convert_to_24hr( $time_match[2] );
+            $time_range = $start_time . ' - ' . $end_time;
+        }
+
+        if ( empty( $day_of_week ) || empty( $time_range ) ) {
+            $processed++;
+            continue;
+        }
+
+        $processed++;
+
+        // Extract contact info (look for Mobile/Phone/E-Mail patterns)
+        $contact = '';
+        if ( preg_match( '/Mobile\s*[-–]?\s*([\d\s]+)/i', $full_text, $mobile_match ) ) {
+            $contact = trim( $mobile_match[1] );
+        } elseif ( preg_match( '/E-Mail\s*[-–]?\s*([\w\.\-@]+)/i', $full_text, $email_match ) ) {
+            $contact = trim( $email_match[1] );
+        }
+
+        // Clean up activity name - remove "with Name" suffix if present for unique key
+        $clean_name = preg_replace( '/\s+with\s+.+$/i', '', $activity_name );
+        $unique_key = $day_of_week . '_' . strtolower( $clean_name ) . '_' . $time_range;
+
+        // Skip if we've already seen this class (de-duplicate weekly repeats)
+        if ( isset( $seen_classes[ $unique_key ] ) ) {
+            continue;
+        }
+        $seen_classes[ $unique_key ] = true;
+
+        // Initialize day array if needed
+        if ( ! isset( $classes[ $day_of_week ] ) ) {
+            $classes[ $day_of_week ] = array();
+        }
+
+        // Auto-categorize the class
+        $category = northam_guess_class_category( $activity_name );
+
+        $classes[ $day_of_week ][] = array(
+            'name'      => $activity_name,
+            'time'      => $time_range,
+            'frequency' => 'Weekly',
+            'contact'   => $contact,
+            'category'  => $category,
+        );
+    }
+
+    // Sort classes within each day by time
+    foreach ( $classes as $day => &$day_classes ) {
+        usort( $day_classes, function( $a, $b ) {
+            return strcmp( $a['time'], $b['time'] );
+        });
+    }
+    unset( $day_classes );
+
+    return $classes;
+}
+
+/**
+ * Convert 12-hour time format to 24-hour format
+ *
+ * @param string $time Time in 12-hour format (e.g., "2:00 pm", "11:30 am")
+ * @return string Time in 24-hour format (e.g., "14:00", "11:30")
+ */
+function northam_convert_to_24hr( $time ) {
+    $time = strtolower( trim( $time ) );
+
+    // Parse the time
+    if ( preg_match( '/(\d{1,2}):(\d{2})\s*(am|pm)/i', $time, $matches ) ) {
+        $hour = (int) $matches[1];
+        $minute = $matches[2];
+        $period = strtolower( $matches[3] );
+
+        // Convert to 24-hour format
+        if ( $period === 'pm' && $hour !== 12 ) {
+            $hour += 12;
+        } elseif ( $period === 'am' && $hour === 12 ) {
+            $hour = 0;
+        }
+
+        // Format with leading zero
+        return sprintf( '%02d:%s', $hour, $minute );
+    }
+
+    // Return original if parsing fails
+    return $time;
 }
 
 /**
@@ -1661,13 +2087,14 @@ function northam_clean_text( $text ) {
  * @param int $week_start Unix timestamp for week start (Monday)
  * @param int $week_end Unix timestamp for week end (Sunday)
  * @param string $category_filter Optional category slug to filter by (default 'all')
+ * @param int $venue_filter Optional venue ID to filter by (default 0 = all venues)
  * @return array Classes organized by date key (Y-m-d)
  */
-function northam_get_regular_classes_for_week( $week_start, $week_end, $category_filter = 'all' ) {
+function northam_get_regular_classes_for_week( $week_start, $week_end, $category_filter = 'all', $venue_filter = 0 ) {
     $classes_by_day = array();
 
-    // Query all venues that have regular classes
-    $venues = get_posts( array(
+    // Build query args
+    $query_args = array(
         'post_type'      => 'northam_venue',
         'posts_per_page' => -1,
         'post_status'    => 'publish',
@@ -1678,7 +2105,22 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
                 'compare' => '!=',
             ),
         ),
-    ) );
+    );
+
+    // If filtering by specific venue, only get that one
+    if ( $venue_filter > 0 ) {
+        $query_args['p'] = $venue_filter;
+    }
+
+    // Query venues that have regular classes
+    $venues = get_posts( $query_args );
+
+    // DEBUG
+    echo '<!-- DEBUG venues found: ' . count($venues) . ' -->';
+    foreach ($venues as $v) {
+        $meta = get_post_meta($v->ID, '_northam_regular_classes', true);
+        echo '<!-- DEBUG venue ' . $v->ID . ' (' . esc_html($v->post_title) . '): meta length = ' . strlen($meta) . ' -->';
+    }
 
     if ( empty( $venues ) ) {
         return $classes_by_day;
@@ -1695,12 +2137,22 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
         $day_name = date( 'l', $day_timestamp );
         $week_of_month = ceil( date( 'j', $day_timestamp ) / 7 ); // 1st, 2nd, 3rd, 4th week
 
+        // Calculate which occurrence of this weekday in the month (1st Monday, 2nd Monday, etc.)
+        $day_of_month = (int) date( 'j', $day_timestamp );
+        $occurrence_of_weekday = ceil( $day_of_month / 7 );
+
+        // Check if this is the last occurrence of this weekday in the month
+        $days_in_month = (int) date( 't', $day_timestamp );
+        $is_last_occurrence = ( $day_of_month + 7 > $days_in_month );
+
         $week_dates[] = array(
-            'key'           => $day_key,
-            'day_name'      => $day_name,
-            'timestamp'     => $day_timestamp,
-            'week_of_month' => $week_of_month,
-            'is_last_week'  => ( date( 'j', $day_timestamp ) + 7 > date( 't', $day_timestamp ) ),
+            'key'                   => $day_key,
+            'day_name'              => $day_name,
+            'timestamp'             => $day_timestamp,
+            'week_of_month'         => $week_of_month,
+            'is_last_week'          => ( $day_of_month + 7 > $days_in_month ),
+            'occurrence_of_weekday' => $occurrence_of_weekday,
+            'is_last_occurrence'    => $is_last_occurrence,
         );
 
         $classes_by_day[ $day_key ] = array();
@@ -1714,7 +2166,7 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
             continue;
         }
 
-        $classes_data = json_decode( $classes_json, true );
+        $classes_data = json_decode( wp_unslash( $classes_json ), true );
 
         if ( empty( $classes_data ) || ! is_array( $classes_data ) ) {
             continue;
@@ -1768,7 +2220,7 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
  * Determine if a class occurs on a specific date based on its frequency
  *
  * @param array $class Class data with 'frequency' key
- * @param array $date_info Date info with 'week_of_month' and 'is_last_week'
+ * @param array $date_info Date info with 'timestamp', 'week_of_month', 'is_last_week', 'occurrence_of_weekday'
  * @return bool
  */
 function northam_class_occurs_on_date( $class, $date_info ) {
@@ -1776,12 +2228,38 @@ function northam_class_occurs_on_date( $class, $date_info ) {
     $week = $date_info['week_of_month'];
     $is_last = $date_info['is_last_week'];
 
+    // Use occurrence of this specific weekday in the month (e.g., "1st Monday", "2nd Tuesday")
+    $occurrence = isset( $date_info['occurrence_of_weekday'] ) ? $date_info['occurrence_of_weekday'] : $week;
+    $is_last_occurrence = isset( $date_info['is_last_occurrence'] ) ? $date_info['is_last_occurrence'] : $is_last;
+
     // Weekly classes always occur
     if ( $frequency === 'weekly' || empty( $frequency ) ) {
         return true;
     }
 
-    // Check specific week patterns
+    // Check for "of month" patterns (e.g., "1st of month" = 1st Monday/Tuesday/etc of month)
+    $is_of_month = strpos( $frequency, 'of month' ) !== false;
+
+    if ( $is_of_month ) {
+        // These are specific weekday occurrences, not week-of-month
+        if ( strpos( $frequency, '1st' ) !== false ) {
+            return ( $occurrence === 1 );
+        }
+        if ( strpos( $frequency, '2nd' ) !== false ) {
+            return ( $occurrence === 2 );
+        }
+        if ( strpos( $frequency, '3rd' ) !== false ) {
+            return ( $occurrence === 3 );
+        }
+        if ( strpos( $frequency, '4th' ) !== false ) {
+            return ( $occurrence === 4 );
+        }
+        if ( strpos( $frequency, 'last' ) !== false ) {
+            return $is_last_occurrence;
+        }
+    }
+
+    // Check specific week patterns (e.g., "1st & 3rd weeks", "2nd week")
     if ( strpos( $frequency, '1st' ) !== false && strpos( $frequency, '3rd' ) !== false ) {
         return ( $week === 1 || $week === 3 );
     }

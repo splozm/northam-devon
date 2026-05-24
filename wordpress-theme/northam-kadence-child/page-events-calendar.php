@@ -6,9 +6,25 @@
 
 get_header();
 
-// Get current filter from URL
+// Get current filters from URL
 $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['category']) : 'all';
+$current_venue = isset($_GET['venue']) ? absint($_GET['venue']) : 0;
 $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Show classes by default
+
+// Query venues marked as "is a venue" (for dropdown filter)
+$venues = get_posts( array(
+	'post_type'      => 'northam_venue',
+	'posts_per_page' => -1,
+	'orderby'        => 'title',
+	'order'          => 'ASC',
+	'post_status'    => 'publish',
+	'meta_query'     => array(
+		array(
+			'key'   => '_northam_is_venue',
+			'value' => '1',
+		),
+	),
+) );
 ?>
 
 <div class="northam-events-calendar-page">
@@ -34,56 +50,110 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 	<div class="northam-filters-bar">
 		<div class="northam-container">
 			<div class="northam-filters-form">
-				<!-- Filter Icon (Mobile) -->
-				<button class="northam-filter-mobile-toggle" aria-label="Toggle filters">
-					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-					</svg>
-				</button>
+				<?php
+				// Helper to build filter URL preserving other params
+				function northam_filter_url( $category = null, $venue = null ) {
+					$params = array();
 
-				<!-- Category Filters -->
+					// Set category (use current if not specified)
+					if ( $category !== null ) {
+						$params['category'] = $category;
+					} elseif ( isset( $_GET['category'] ) ) {
+						$params['category'] = sanitize_text_field( $_GET['category'] );
+					}
+
+					// Set venue (use current if not specified)
+					if ( $venue !== null ) {
+						if ( $venue > 0 ) {
+							$params['venue'] = $venue;
+						}
+						// If venue is 0, don't add it (means "all venues")
+					} elseif ( isset( $_GET['venue'] ) && absint( $_GET['venue'] ) > 0 ) {
+						$params['venue'] = absint( $_GET['venue'] );
+					}
+
+					// Preserve week offset if set
+					if ( isset( $_GET['week'] ) ) {
+						$params['week'] = intval( $_GET['week'] );
+					}
+
+					return add_query_arg( $params, remove_query_arg( array( 'category', 'venue', 'week' ) ) );
+				}
+
+				// Helper for venue-only URL changes
+				function northam_venue_url( $venue_id ) {
+					return northam_filter_url( null, $venue_id );
+				}
+
+				// Category options for both desktop and mobile
+				$categories = array(
+					'all'              => array( 'label' => 'All Events', 'class' => '' ),
+					'kids-family'      => array( 'label' => 'Kids & Family', 'class' => 'northam-filter-kids' ),
+					'active-outdoors'  => array( 'label' => 'Active & Outdoors', 'class' => 'northam-filter-active' ),
+					'food-drink'       => array( 'label' => 'Food & Drink', 'class' => 'northam-filter-food' ),
+					'arts-culture'     => array( 'label' => 'Arts & Culture', 'class' => 'northam-filter-arts' ),
+					'community-social' => array( 'label' => 'Community & Social', 'class' => 'northam-filter-community' ),
+				);
+				?>
+
+				<!-- Mobile Category Dropdown -->
+				<div class="northam-filter-mobile-dropdown">
+					<select id="northam-category-select" class="northam-category-select" aria-label="Filter by category">
+						<?php foreach ( $categories as $slug => $cat ) : ?>
+							<option value="<?php echo esc_attr( northam_filter_url( $slug ) ); ?>" <?php selected( $current_category, $slug ); ?>>
+								<?php echo esc_html( $cat['label'] ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="6 9 12 15 18 9"></polyline>
+					</svg>
+				</div>
+
+				<!-- Desktop Category Filters -->
 				<div class="northam-category-filters northam-category-filters-center">
-					<a href="<?php echo esc_url(add_query_arg('category', 'all', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'all' ? 'active' : ''; ?>">
-						All Events
-					</a>
-					<a href="<?php echo esc_url(add_query_arg('category', 'kids-family', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'kids-family' ? 'active' : ''; ?>">
-						Kids & Family
-					</a>
-					<a href="<?php echo esc_url(add_query_arg('category', 'active-outdoors', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'active-outdoors' ? 'active' : ''; ?>">
-						Active & Outdoors
-					</a>
-					<a href="<?php echo esc_url(add_query_arg('category', 'food-drink', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'food-drink' ? 'active' : ''; ?>">
-						Food & Drink
-					</a>
-					<a href="<?php echo esc_url(add_query_arg('category', 'arts-culture', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'arts-culture' ? 'active' : ''; ?>">
-						Arts & Culture
-					</a>
-					<a href="<?php echo esc_url(add_query_arg('category', 'music-nightlife', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'music-nightlife' ? 'active' : ''; ?>">
-						Music & Nightlife
-					</a>
-					<a href="<?php echo esc_url(add_query_arg('category', 'community-social', remove_query_arg('category'))); ?>"
-					   class="northam-filter-btn <?php echo $current_category === 'community-social' ? 'active' : ''; ?>">
-						Community & Social
-					</a>
-					<span class="northam-filter-divider"></span>
-					<a href="<?php echo esc_url(add_query_arg('classes', $show_classes ? '0' : '1')); ?>"
-					   class="northam-filter-btn northam-filter-toggle <?php echo $show_classes ? 'active' : ''; ?>">
-						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-							<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-						</svg>
-						Regular Classes
-					</a>
+					<?php foreach ( $categories as $slug => $cat ) : ?>
+						<a href="<?php echo esc_url( northam_filter_url( $slug ) ); ?>"
+						   class="northam-filter-btn <?php echo esc_attr( $cat['class'] ); ?> <?php echo $current_category === $slug ? 'active' : ''; ?>">
+							<?php if ( $slug !== 'all' ) : ?>
+								<span class="filter-dot"></span>
+							<?php endif; ?>
+							<?php echo esc_html( $cat['label'] ); ?>
+						</a>
+					<?php endforeach; ?>
 				</div>
 			</div>
+
+			<?php if ( ! empty( $venues ) ) : ?>
+			<!-- Venue Filter (Mobile & Desktop) -->
+			<div class="northam-venue-filter-row">
+				<div class="northam-venue-dropdown">
+					<select id="northam-venue-select" class="northam-venue-select" aria-label="Filter by venue">
+						<option value="<?php echo esc_attr( northam_venue_url( 0 ) ); ?>" <?php selected( $current_venue, 0 ); ?>>
+							All Venues
+						</option>
+						<?php foreach ( $venues as $venue ) : ?>
+							<option value="<?php echo esc_attr( northam_venue_url( $venue->ID ) ); ?>" <?php selected( $current_venue, $venue->ID ); ?>>
+								<?php echo esc_html( $venue->post_title ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					</div>
+			</div>
+			<?php endif; ?>
 		</div>
 	</div>
+
+	<script>
+	document.getElementById('northam-category-select').addEventListener('change', function() {
+		window.location.href = this.value;
+	});
+	<?php if ( ! empty( $venues ) ) : ?>
+	document.getElementById('northam-venue-select').addEventListener('change', function() {
+		window.location.href = this.value;
+	});
+	<?php endif; ?>
+	</script>
 
 	<!-- Events Content -->
 	<div class="northam-archive-content" style="padding-top: 3rem; padding-bottom: 3rem;">
@@ -121,6 +191,18 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 									break;
 								}
 							}
+						}
+					}
+					$all_events = $filtered_events;
+				}
+
+				// Filter events by venue if selected
+				if ( $current_venue > 0 ) {
+					$filtered_events = array();
+					foreach ( $all_events as $em_event ) {
+						$linked_venue_id = get_post_meta( $em_event->post_id, '_northam_event_venue', true );
+						if ( absint( $linked_venue_id ) === $current_venue ) {
+							$filtered_events[] = $em_event;
 						}
 					}
 					$all_events = $filtered_events;
@@ -168,7 +250,10 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 				// Merge regular classes if enabled
 				$total_week_classes = 0;
 				if ( $show_classes ) {
-					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end, $current_category );
+					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end, $current_category, $current_venue );
+					// DEBUG: Output what we got
+					echo '<!-- DEBUG: regular_classes count = ' . count($regular_classes) . ' -->';
+					echo '<!-- DEBUG: regular_classes = ' . esc_html(print_r($regular_classes, true)) . ' -->';
 					foreach ( $regular_classes as $day_key => $day_classes ) {
 						if ( isset( $events_by_day[$day_key] ) ) {
 							foreach ( $day_classes as $class ) {
@@ -268,6 +353,12 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 										$item_type = 'community'; // default
 										$item_name = $item['name'];
 										$item_time = $item['time'];
+										$item_description = '';
+										$item_map_url = '';
+
+										// Initialize venue info
+										$venue_name = '';
+										$venue_url = '';
 
 										if ( $is_class ) {
 											// Map class category to display type
@@ -281,6 +372,13 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 												'community-social' => 'community',
 											);
 											$item_type = isset( $cat_to_type[ $class_cat ] ) ? $cat_to_type[ $class_cat ] : 'community';
+											$venue_name = isset( $item['venue_name'] ) ? $item['venue_name'] : '';
+											$venue_url = isset( $item['venue_url'] ) ? $item['venue_url'] : '';
+											$item_description = $item['frequency'] . ( ! empty( $item['contact'] ) ? ' • ' . $item['contact'] : '' );
+											// Get map URL from the venue
+											if ( isset( $item['venue_id'] ) ) {
+												$item_map_url = get_post_meta( $item['venue_id'], '_northam_map_url', true );
+											}
 										} else {
 											// Get event category for color coding
 											$em_event = $item['em_event'];
@@ -308,9 +406,44 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 													}
 												}
 											}
+
+											// Get venue from custom meta field (linked business/venue)
+											$linked_venue_id = get_post_meta( $em_event->post_id, '_northam_event_venue', true );
+											if ( $linked_venue_id ) {
+												$linked_venue = get_post( $linked_venue_id );
+												if ( $linked_venue ) {
+													$venue_name = $linked_venue->post_title;
+													$venue_url = get_permalink( $linked_venue_id );
+													// Get map URL from linked venue/business
+													$item_map_url = get_post_meta( $linked_venue_id, '_northam_map_url', true );
+												}
+											} else {
+												// Fallback to EM location if no linked venue
+												$location = $em_event->get_location();
+												if ( $location && ! empty( $location->location_name ) ) {
+													$venue_name = $location->location_name;
+												}
+											}
+
+											// If no map URL from venue, try event's own map URL
+											if ( empty( $item_map_url ) ) {
+												$item_map_url = get_post_meta( $em_event->post_id, '_northam_event_map_url', true );
+											}
+
+											$item_description = wp_trim_words( $em_event->post_content, 20 );
 										}
+
+										// Format date for display
+										$item_date = date( 'l, j F Y', strtotime( $day['key'] ) );
 										?>
-										<div class="northam-calendar-event northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>">
+										<div class="northam-calendar-event northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>"
+											 data-event-title="<?php echo esc_attr( $item_name ); ?>"
+											 data-event-date="<?php echo esc_attr( $item_date ); ?>"
+											 data-event-time="<?php echo esc_attr( $item_time ); ?>"
+											 data-event-venue="<?php echo esc_attr( $venue_name ); ?>"
+											 data-event-type="<?php echo esc_attr( $item_type ); ?>"
+											 data-event-description="<?php echo esc_attr( $item_description ); ?>"
+											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
 												<p class="event-title"><?php echo esc_html( $item_name ); ?></p>
@@ -321,11 +454,15 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 													</svg>
 													<?php echo esc_html( $item_time ); ?>
 												</p>
-												<?php if ( $is_class && ! empty( $item['venue_name'] ) ) : ?>
+												<?php if ( ! empty( $venue_name ) ) : ?>
 													<p class="event-venue">
-														<a href="<?php echo esc_url( $item['venue_url'] ); ?>">
-															<?php echo esc_html( $item['venue_name'] ); ?>
-														</a>
+														<?php if ( ! empty( $venue_url ) ) : ?>
+															<a href="<?php echo esc_url( $venue_url ); ?>">
+																<?php echo esc_html( $venue_name ); ?>
+															</a>
+														<?php else : ?>
+															<?php echo esc_html( $venue_name ); ?>
+														<?php endif; ?>
 													</p>
 												<?php endif; ?>
 											</div>
@@ -367,6 +504,7 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 										$item_type = 'community';
 										$item_name = $item['name'];
 										$item_time = $item['time'];
+										$item_map_url = '';
 
 										if ( $is_class ) {
 											// Map class category to display type
@@ -383,6 +521,10 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 											$location_name = $item['venue_name'];
 											$location_url = $item['venue_url'];
 											$description = $item['frequency'] . ( ! empty( $item['contact'] ) ? ' • ' . $item['contact'] : '' );
+											// Get map URL from the venue
+											if ( isset( $item['venue_id'] ) ) {
+												$item_map_url = get_post_meta( $item['venue_id'], '_northam_map_url', true );
+											}
 										} else {
 											$em_event = $item['em_event'];
 											$categories = $em_event->get_categories();
@@ -410,13 +552,45 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 												}
 											}
 
-											$location = $em_event->get_location();
-											$location_name = $location ? $location->location_name : '';
+											// Get venue from custom meta field (linked business/venue)
+											$linked_venue_id = get_post_meta( $em_event->post_id, '_northam_event_venue', true );
+											$location_name = '';
 											$location_url = '';
+											if ( $linked_venue_id ) {
+												$linked_venue = get_post( $linked_venue_id );
+												if ( $linked_venue ) {
+													$location_name = $linked_venue->post_title;
+													$location_url = get_permalink( $linked_venue_id );
+													// Get map URL from linked venue/business
+													$item_map_url = get_post_meta( $linked_venue_id, '_northam_map_url', true );
+												}
+											} else {
+												// Fallback to EM location if no linked venue
+												$location = $em_event->get_location();
+												if ( $location && ! empty( $location->location_name ) ) {
+													$location_name = $location->location_name;
+												}
+											}
+
+											// If no map URL from venue, try event's own map URL
+											if ( empty( $item_map_url ) ) {
+												$item_map_url = get_post_meta( $em_event->post_id, '_northam_event_map_url', true );
+											}
+
 											$description = wp_trim_words( $em_event->post_content, 15 );
 										}
+
+										// Format date for display
+										$item_date = date( 'l, j F Y', strtotime( $day['key'] ) );
 										?>
-										<div class="mobile-event-card northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>">
+										<div class="mobile-event-card northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>"
+											 data-event-title="<?php echo esc_attr( $item_name ); ?>"
+											 data-event-date="<?php echo esc_attr( $item_date ); ?>"
+											 data-event-time="<?php echo esc_attr( $item_time ); ?>"
+											 data-event-venue="<?php echo esc_attr( $location_name ); ?>"
+											 data-event-type="<?php echo esc_attr( $item_type ); ?>"
+											 data-event-description="<?php echo esc_attr( $description ); ?>"
+											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
 												<p class="mobile-event-title">
@@ -440,7 +614,7 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 																<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
 																<circle cx="12" cy="10" r="3"></circle>
 															</svg>
-															<?php if ( $is_class && $location_url ) : ?>
+															<?php if ( ! empty( $location_url ) ) : ?>
 																<a href="<?php echo esc_url( $location_url ); ?>"><?php echo esc_html( $location_name ); ?></a>
 															<?php else : ?>
 																<?php echo esc_html( $location_name ); ?>
@@ -461,37 +635,7 @@ $show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Sh
 					<?php endforeach; ?>
 				</div>
 
-				<!-- Legend -->
-				<div class="northam-calendar-legend">
-					<div class="legend-item northam-event-kids">
-						<span class="legend-dot"></span>
-						<span>Kids & Family</span>
-					</div>
-					<div class="legend-item northam-event-active">
-						<span class="legend-dot"></span>
-						<span>Active & Outdoors</span>
-					</div>
-					<div class="legend-item northam-event-food">
-						<span class="legend-dot"></span>
-						<span>Food & Drink</span>
-					</div>
-					<div class="legend-item northam-event-arts">
-						<span class="legend-dot"></span>
-						<span>Arts & Culture</span>
-					</div>
-					<div class="legend-item northam-event-community">
-						<span class="legend-dot"></span>
-						<span>Community & Social</span>
-					</div>
-					<?php if ( $show_classes ) : ?>
-					<div class="legend-item northam-event-class">
-						<span class="legend-dot"></span>
-						<span>Regular Classes</span>
-					</div>
-					<?php endif; ?>
-				</div>
-
-			<?php
+				<?php
 			} else {
 				?>
 				<p>Events Manager plugin is not active.</p>
