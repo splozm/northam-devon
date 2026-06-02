@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Events from "./pages/Events";
+import EventsV2 from "./pages/EventsV2";
 import Directory from "./pages/Directory";
 import ThingsToDo from "./pages/ThingsToDo";
 import Community from "./pages/Community";
@@ -24,6 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/events-v2" element={<EventsV2 />} />
           <Route path="/directory" element={<Directory />} />
           <Route path="/business/:slug" element={<BusinessPage />} />
           <Route path="/local-services" element={<LocalServices />} />
