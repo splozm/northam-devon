@@ -1489,7 +1489,7 @@ function northam_load_weekly_events() {
 					if ( $em_event->start >= $week_start && $em_event->start <= $week_end ) {
 						$events[] = array(
 							'id' => $em_event->event_id,
-							'name' => $em_event->event_name,
+							'name' => esc_html( $em_event->event_name ),
 							'post_id' => $em_event->post_id,
 							'start_date' => date_i18n( 'D, jS M', strtotime( $em_event->event_start_date ) ),
 							'start_time' => date_i18n( 'g:i A', strtotime( $em_event->event_start_time ) ),
