@@ -886,6 +886,10 @@ a.northam-listing-card-link:focus {
   justify-content: center;
   overflow: hidden;
   background-color: var(--northam-coastal-deep);
+  background-image: url('https://northamdevon.co.uk/wp-content/uploads/2026/06/Photo-June-3-2021-1-scaled.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .northam-hero-overlay {

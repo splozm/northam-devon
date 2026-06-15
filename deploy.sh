@@ -5,8 +5,8 @@
 SSH_USER="u2161-b0eepd24ni5b"
 SSH_HOST="ssh.northamdevon.co.uk"
 SSH_PORT="18765"
-REMOTE_PATH="/home/your-username/www/northamdevon.co.uk/public_html/wp-content/themes/northam-child/"
-LOCAL_PATH="./northam-child/"
+REMOTE_PATH="/home/customer/www/northamdevon.co.uk/public_html/wp-content/themes/northam-kadence-child/"
+LOCAL_PATH="./wordpress-theme/northam-kadence-child/"
 
 echo "🚀 Deploying Northam theme to SiteGround..."
 
