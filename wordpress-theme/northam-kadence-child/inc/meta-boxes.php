@@ -826,6 +826,7 @@ function northam_remove_events_manager_meta_boxes() {
         'em-event-where',       // Where
         'em-event-attributes',  // Attributes
         'tagsdiv-event-tags',   // Events Tags
+        'em_event_meta_box',    // Event Meta (debugging only)
         // fallbacks (standard WP IDs, in case)
         'pageparentdiv',
         'commentstatusdiv',
