@@ -1405,6 +1405,16 @@ a.northam-listing-card-link:focus {
   gap: 1rem;
 }
 
+/* Show Formspree success/error messages when they have content */
+[data-fs-success]:not(:empty) {
+    display: block !important;
+}
+
+[data-fs-error]:not(:empty) {
+    display: block !important;
+}
+
+
 @media (min-width: 768px) {
   .northam-filters-form {
     flex-direction: row;

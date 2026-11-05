@@ -214,42 +214,10 @@ while ( have_posts() ) :
                 <?php endif; ?>
 
                 <?php
-                // Get events at this business if Events Manager is active
-                $events = array();
-                $week_offset = isset( $_GET['week'] ) ? absint( $_GET['week'] ) : 0;
+                // Next upcoming events linked to this business
+                $events = northam_get_business_events( get_the_ID(), 6 );
 
-                if ( class_exists( 'EM_Events' ) ) {
-                    // Calculate start and end of the week to display
-                    $current_time = current_time( 'timestamp' );
-                    $week_start = strtotime( 'monday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 );
-                    $week_end = strtotime( 'sunday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
-
-                    // Get all future events using Events Manager API
-                    $all_events = EM_Events::get( array(
-                        'scope' => 'future',
-                        'status' => 1,
-                    ) );
-
-                    // Filter events to only those linked to this business and in the current week
-                    if ( ! empty( $all_events ) ) {
-                        foreach ( $all_events as $em_event ) {
-                            // Check if this event's post has our meta field
-                            $venue_id = get_post_meta( $em_event->post_id, '_northam_event_venue', true );
-
-                            if ( $venue_id == get_the_ID() ) {
-                                // Check if event is within the current week
-                                if ( $em_event->start >= $week_start && $em_event->start <= $week_end ) {
-                                    $events[] = $em_event;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Show events section if there are events OR for debugging
                 if ( ! empty( $events ) ) :
-                    $week_start_date = date_i18n( 'j M', $week_start );
-                    $week_end_date = date_i18n( 'j M', $week_end );
                 ?>
                 <!-- Upcoming Events Section -->
                 <div id="events" class="northam-events-section">
@@ -261,35 +229,13 @@ while ( have_posts() ) :
                                 <line x1="8" y1="2" x2="8" y2="6"></line>
                                 <line x1="3" y1="10" x2="21" y2="10"></line>
                             </svg>
-                            <?php
-                            if ( $week_offset === 0 ) {
-                                echo esc_html__( 'This Week\'s Events', 'northam' );
-                            } else {
-                                echo esc_html( sprintf( __( 'Events: %s - %s', 'northam' ), $week_start_date, $week_end_date ) );
-                            }
-                            ?>
+                            <?php esc_html_e( 'Upcoming Events', 'northam' ); ?>
                         </h2>
-                        <div class="northam-events-pagination">
-                            <?php if ( $week_offset > 0 ) : ?>
-                                <button class="northam-events-nav northam-events-prev" data-week="<?php echo esc_attr( max( 0, $week_offset - 1 ) ); ?>">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="15 18 9 12 15 6"></polyline>
-                                    </svg>
-                                    Previous Week
-                                </button>
-                            <?php endif; ?>
-                            <button class="northam-events-nav northam-events-next" data-week="<?php echo esc_attr( $week_offset + 1 ); ?>">
-                                Next Week
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="9 18 15 12 9 6"></polyline>
-                                </svg>
-                            </button>
-                        </div>
                     </div>
 
                     <div class="northam-events-grid-small">
                         <?php foreach ( $events as $event ) :
-                            $map_url = get_post_meta( $event->post_id, '_northam_event_map_url', true );
+                            $event_map_url = get_post_meta( $event->post_id, '_northam_event_map_url', true );
                         ?>
                             <div class="northam-event-card-small">
                                 <div class="northam-event-card-image">
@@ -305,8 +251,8 @@ while ( have_posts() ) :
                                         <?php echo esc_html( date_i18n( 'D, jS M', strtotime( $event->event_start_date ) ) ); ?>
                                         at <?php echo esc_html( date_i18n( 'g:i A', strtotime( $event->event_start_time ) ) ); ?>
                                     </p>
-                                    <?php if ( $map_url ) : ?>
-                                        <a href="<?php echo esc_url( $map_url ); ?>" target="_blank" rel="noopener noreferrer" class="northam-map-link northam-map-link-small">
+                                    <?php if ( $event_map_url ) : ?>
+                                        <a href="<?php echo esc_url( $event_map_url ); ?>" target="_blank" rel="noopener noreferrer" class="northam-map-link northam-map-link-small">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                                 <circle cx="12" cy="10" r="3"></circle>

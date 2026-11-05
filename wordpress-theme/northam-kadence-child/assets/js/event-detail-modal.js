@@ -85,7 +85,13 @@
 			modal.classList.add('modal-open');
 			document.body.style.overflow = 'hidden';
 
-			// Analytics: record which event/class was opened
+			// Trigger slide-up animation
+			setTimeout(() => {
+				modalContent.classList.add('modal-slide-in');
+			}, 10);
+
+			modal.classList.add('modal-open');
+						// Analytics: record which event/class was opened
 			if (typeof window.gtag === 'function') {
 				window.gtag('event', 'event_open', {
 					event_title: eventData.title || '',
@@ -93,10 +99,6 @@
 				});
 			}
 
-			// Trigger slide-up animation
-			setTimeout(() => {
-				modalContent.classList.add('modal-slide-in');
-			}, 10);
 		}
 
 		// Close modal

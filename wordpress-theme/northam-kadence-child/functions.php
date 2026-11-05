@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.0.1' );
+define( 'NORTHAM_VERSION', '1.0.2' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -335,6 +335,8 @@ function northam_enqueue_styles() {
         NORTHAM_VERSION,
         true
     );
+
+    
 }
 add_action( 'wp_enqueue_scripts', 'northam_enqueue_styles', 20 );
 
@@ -1064,10 +1066,12 @@ function northam_get_business_events( $business_id, $limit = 5 ) {
         return array();
     }
 
-    // Get all future events using Events Manager API
+    // Get all future events using Events Manager API, soonest first
     $all_events = EM_Events::get( array(
         'scope' => 'future',
         'status' => 1,
+        'orderby' => 'event_start_date,event_start_time',
+        'order' => 'ASC',
     ) );
 
     // Filter events to only those linked to this business

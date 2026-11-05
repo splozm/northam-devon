@@ -291,7 +291,7 @@ get_header();
     <div class="northam-container" style="max-width: 600px; text-align: center;">
         <h2 style="font-size: var(--northam-text-2xl); margin-bottom: 1rem;">Stay in the Loop</h2>
         <p class="text-muted" style="margin-bottom: 1.5rem;">
-            Get weekly updates on events, news, and community happenings in Northam.
+            Get updates on events, news, and community happenings in Northam.
         </p>
         <!-- Newsletter Signup Form -->
         <div data-fs-success style="color: var(--northam-primary); font-weight: 500; display: none;"></div>
