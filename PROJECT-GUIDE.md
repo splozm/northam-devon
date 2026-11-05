@@ -299,13 +299,88 @@ $socials = northam_get_social_links( $post_id );
 
 ## Deployment
 
-When deploying to production:
+### Production Hosting
+
+The live site is hosted on **SiteGround** at `northamdevon.co.uk`.
+
+### Normal Development Workflow
+
+1. **Edit locally** in `/wordpress-theme/northam-kadence-child/` (this repo)
+2. **Test** with Local by Flywheel at `http://northam-devon.local`
+3. **Deploy to live** using the deployment script:
+   ```bash
+   ./deploy.sh
+   ```
+4. **Commit and push** to git:
+   ```bash
+   git add .
+   git commit -m "Your changes"
+   git push
+   ```
+
+### Deployment Script
+
+The `deploy.sh` script uses `rsync` over SSH to sync theme files to SiteGround:
+
+```bash
+#!/bin/bash
+# Deploys wordpress-theme/northam-kadence-child/ to SiteGround
+# Uses rsync with --delete flag to keep server in sync
+./deploy.sh
+```
+
+**Before deploying:**
+- Test changes locally
+- Bump `NORTHAM_VERSION` in `functions.php` to bust CSS/JS cache
+- Ensure changes are working as expected
+
+### Syncing FROM Live Site
+
+If you need to download the current production state (e.g., if direct edits were made on the server):
+
+```bash
+# Dry-run first to see what would change
+rsync -avzn -e "ssh -p 18765" \
+  u2161-b0eepd24ni5b@ssh.northamdevon.co.uk:/home/customer/www/northamdevon.co.uk/public_html/wp-content/themes/northam-kadence-child/ \
+  ./wordpress-theme/northam-kadence-child/
+
+# Actually download (remove -n flag)
+rsync -avz -e "ssh -p 18765" \
+  u2161-b0eepd24ni5b@ssh.northamdevon.co.uk:/home/customer/www/northamdevon.co.uk/public_html/wp-content/themes/northam-kadence-child/ \
+  ./wordpress-theme/northam-kadence-child/
+
+# Then commit to git
+git add wordpress-theme/northam-kadence-child/
+git commit -m "Sync from live SiteGround site"
+git push
+```
+
+### Git Workflow
+
+- **Main branch**: `main` (production-ready code)
+- Git repository: `https://github.com/splozm/northam-devon.git`
+- Always keep git in sync with the live site
+- Commit regularly during development
+- Never edit directly on SiteGround unless absolutely necessary
+
+### Production Requirements
+
+- Kadence parent theme must be installed and activated
+- The Events Calendar plugin
+- PHP 7.4 or higher
+- WordPress 6.0 or higher
+
+### Manual Deployment (Legacy - Use deploy.sh instead)
+
+<!--
+Old method - kept for reference:
 
 1. **DO NOT** deploy the symlink setup
 2. Copy the actual theme files from `/wordpress-theme/northam-kadence-child/` to production
 3. Upload to `wp-content/themes/northam-kadence-child/`
 4. Activate the theme in WordPress admin
 5. Ensure parent theme (Kadence) is also installed
+-->
 
 ## Additional Notes
 
