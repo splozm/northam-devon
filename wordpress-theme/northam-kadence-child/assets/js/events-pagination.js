@@ -10,6 +10,42 @@
     let isLoading = false;
 
     /**
+     * Escape HTML special characters
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
+     * Validate and create safe map link
+     */
+    function createSafeMapLink(url) {
+        if (!url) return '';
+
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+                return '';
+            }
+
+            const a = document.createElement('a');
+            a.href = parsed.href;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'northam-map-link northam-map-link-small';
+            a.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg> View on Map`;
+            return a.outerHTML;
+        } catch (e) {
+            return '';
+        }
+    }
+
+    /**
      * Load events for a specific week
      */
     function loadWeekEvents(weekOffset, direction = 'none') {
@@ -55,14 +91,12 @@
                     if (data.events.length > 0) {
                         data.events.forEach(function(event) {
                             const thumbnail = event.thumbnail || '<div class="northam-event-placeholder"></div>';
-                            const mapLink = event.map_url ?
-                                `<a href="${event.map_url}" target="_blank" rel="noopener noreferrer" class="northam-map-link northam-map-link-small">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                        <circle cx="12" cy="10" r="3"></circle>
-                                    </svg>
-                                    View on Map
-                                </a>` : '';
+                            const mapLink = createSafeMapLink(event.map_url);
+
+                            // Escape all dynamic text content
+                            const safeName = escapeHtml(event.name || '');
+                            const safeDate = escapeHtml(event.start_date || '');
+                            const safeTime = escapeHtml(event.start_time || '');
 
                             eventsHtml += `
                                 <div class="northam-event-card-small">
@@ -70,8 +104,8 @@
                                         ${thumbnail}
                                     </div>
                                     <div class="northam-event-card-content">
-                                        <h3>${event.name}</h3>
-                                        <p>${event.start_date} at ${event.start_time}</p>
+                                        <h3>${safeName}</h3>
+                                        <p>${safeDate} at ${safeTime}</p>
                                         ${mapLink}
                                     </div>
                                 </div>

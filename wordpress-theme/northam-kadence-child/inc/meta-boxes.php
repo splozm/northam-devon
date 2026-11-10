@@ -739,39 +739,27 @@ function northam_save_regular_classes_meta( $post_id ) {
     }
 
     if ( isset( $_POST['northam_classes'] ) && is_array( $_POST['northam_classes'] ) ) {
-        $classes = array();
+        $classes = $_POST['northam_classes'];
 
-        foreach ( $_POST['northam_classes'] as $day => $day_classes ) {
-            $day = sanitize_text_field( $day );
-            $classes[ $day ] = array();
+        // Sanitize all text fields recursively
+        $classes = map_deep( $classes, 'sanitize_text_field' );
 
-            if ( is_array( $day_classes ) ) {
-                foreach ( $day_classes as $class ) {
-                    // Only save if at least name is filled
-                    if ( ! empty( $class['name'] ) ) {
-                        $contact_value = $class['contact'] ?? '';
-                        // Use esc_url_raw for URLs, sanitize_text_field for phone numbers
-                        if ( ! empty( $contact_value ) && preg_match( '/^https?:\/\//i', $contact_value ) ) {
-                            $contact_value = esc_url_raw( $contact_value );
-                        } else {
-                            $contact_value = sanitize_text_field( $contact_value );
-                        }
-
-                        $classes[ $day ][] = array(
-                            'time'      => sanitize_text_field( $class['time'] ?? '' ),
-                            'name'      => sanitize_text_field( $class['name'] ?? '' ),
-                            'category'  => sanitize_text_field( $class['category'] ?? '' ),
-                            'frequency' => sanitize_text_field( $class['frequency'] ?? 'Weekly' ),
-                            'contact'   => $contact_value,
-                            'phone'     => sanitize_text_field( $class['phone'] ?? '' ),
-                        );
-                    }
-                }
-            }
-
-            // Remove empty days
-            if ( empty( $classes[ $day ] ) ) {
+        // Remove empty days
+        foreach ( $classes as $day => $day_classes ) {
+            if ( empty( $day_classes ) ) {
                 unset( $classes[ $day ] );
+            } else {
+                // Filter out classes with empty names
+                $classes[ $day ] = array_filter( $day_classes, function( $class ) {
+                    return ! empty( $class['name'] );
+                } );
+
+                // Re-index array after filtering
+                $classes[ $day ] = array_values( $classes[ $day ] );
+
+                if ( empty( $classes[ $day ] ) ) {
+                    unset( $classes[ $day ] );
+                }
             }
         }
 

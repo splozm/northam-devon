@@ -25,3 +25,4 @@ dist-ssr
 
 # Deployment credentials (NEVER commit these)
 .env
+_audit_backup/

@@ -73,12 +73,22 @@
 			// Update map link - use stored URL if available, otherwise generate search URL
 			const mapLink = modal.querySelector('.detail-venue-link');
 			if (eventData.mapUrl && eventData.mapUrl.length > 0) {
-				mapLink.href = eventData.mapUrl;
+				// Validate protocol before setting href
+				try {
+					const parsed = new URL(eventData.mapUrl);
+					if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+						mapLink.setAttribute('href', parsed.href);
+					} else {
+						mapLink.removeAttribute('href');
+					}
+				} catch (e) {
+					mapLink.removeAttribute('href');
+				}
 			} else if (eventData.venue) {
 				const searchQuery = encodeURIComponent(eventData.venue + ', Northam, Devon');
-				mapLink.href = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+				mapLink.setAttribute('href', `https://www.google.com/maps/search/?api=1&query=${searchQuery}`);
 			} else {
-				mapLink.href = '#';
+				mapLink.removeAttribute('href');
 			}
 
 			// Show modal

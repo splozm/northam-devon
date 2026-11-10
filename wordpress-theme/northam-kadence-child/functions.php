@@ -1577,10 +1577,24 @@ function northam_fetch_classes_ajax() {
         wp_send_json_error( array( 'message' => 'No URL provided.' ) );
     }
 
+    // Validate domain whitelist
+    $parsed_url = wp_parse_url( $url );
+    $host = isset( $parsed_url['host'] ) ? strtolower( $parsed_url['host'] ) : '';
+
+    // Remove www. prefix for comparison
+    $host_without_www = preg_replace( '/^www\./', '', $host );
+
+    $allowed_hosts = array( 'northamcommunitycentre.co.uk', 'northamtowncouncil.gov.uk' );
+
+    if ( ! in_array( $host_without_www, $allowed_hosts, true ) ) {
+        wp_send_json_error( array( 'message' => 'URL must be from northamcommunitycentre.co.uk or northamtowncouncil.gov.uk' ) );
+    }
+
     // Fetch the page
-    $response = wp_remote_get( $url, array(
-        'timeout' => 30,
-        'user-agent' => 'Mozilla/5.0 (WordPress/' . get_bloginfo( 'version' ) . ')',
+    $response = wp_safe_remote_get( $url, array(
+        'timeout'     => 15,
+        'redirection' => 2,
+        'user-agent'  => 'WordPress/' . get_bloginfo( 'version' ),
     ) );
 
     if ( is_wp_error( $response ) ) {
@@ -1594,8 +1608,6 @@ function northam_fetch_classes_ajax() {
     }
 
     // Detect which parser to use based on URL domain
-    $parsed_url = parse_url( $url );
-    $host = isset( $parsed_url['host'] ) ? strtolower( $parsed_url['host'] ) : '';
 
     if ( strpos( $host, 'northamcommunitycentre.co.uk' ) !== false ) {
         // Use community centre parser (calendar diary format)
