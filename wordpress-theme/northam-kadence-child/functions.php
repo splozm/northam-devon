@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.0.2' );
+define( 'NORTHAM_VERSION', '1.0.5' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -1620,6 +1620,42 @@ function northam_fetch_classes_ajax() {
 add_action( 'wp_ajax_northam_fetch_classes', 'northam_fetch_classes_ajax' );
 
 /**
+ * Sort classes by start time
+ *
+ * @param array $classes Array of class data
+ * @return array Sorted classes
+ */
+function northam_sort_classes_by_time( $classes ) {
+    usort( $classes, function( $a, $b ) {
+        $time_a = isset( $a['time'] ) ? $a['time'] : '';
+        $time_b = isset( $b['time'] ) ? $b['time'] : '';
+
+        // Extract start time (before the dash)
+        if ( preg_match( '/^(\d{1,2}):(\d{2})/', $time_a, $match_a ) ) {
+            $hour_a = (int) $match_a[1];
+            $min_a = (int) $match_a[2];
+        } else {
+            return 1; // No time, sort to end
+        }
+
+        if ( preg_match( '/^(\d{1,2}):(\d{2})/', $time_b, $match_b ) ) {
+            $hour_b = (int) $match_b[1];
+            $min_b = (int) $match_b[2];
+        } else {
+            return -1; // No time, sort to end
+        }
+
+        // Compare hours first, then minutes
+        if ( $hour_a === $hour_b ) {
+            return $min_a - $min_b;
+        }
+        return $hour_a - $hour_b;
+    } );
+
+    return $classes;
+}
+
+/**
  * Parse HTML from Town Council page to extract class data
  *
  * Structure: <h5>MONDAYS</h5> followed by <h6>Class Name (Time) Frequency <a>Contact</a></h6>
@@ -1697,6 +1733,9 @@ function northam_parse_town_council_html( $html ) {
         // Remove day if no classes found
         if ( empty( $classes[ $current_day ] ) ) {
             unset( $classes[ $current_day ] );
+        } else {
+            // Sort classes by start time
+            $classes[ $current_day ] = northam_sort_classes_by_time( $classes[ $current_day ] );
         }
     }
 
@@ -1894,7 +1933,8 @@ function northam_guess_class_category( $class_name ) {
         'tai chi', 'taichi', 'qigong', 'aerobics', 'zumba', 'spin',
         'walking', 'running', 'cycling', 'swimming', 'sports', 'football',
         'tennis', 'badminton', 'squash', 'golf', 'bowls', 'bowling',
-        'stretch', 'strength', 'cardio', 'hiit', 'body', 'weight'
+        'stretch', 'strength', 'cardio', 'hiit', 'body', 'weight',
+        'kettlebell', 'kettle bell'
     );
     foreach ( $active_keywords as $keyword ) {
         if ( strpos( $name_lower, $keyword ) !== false ) {
@@ -1982,52 +2022,70 @@ function northam_get_class_categories() {
  * May contain <a> tag with contact link
  */
 function northam_parse_class_entry( $element ) {
-    $full_text = trim( $element->textContent );
+    // Get text content with proper whitespace between nodes, excluding anchor elements
+    $full_text = '';
+    foreach ( $element->childNodes as $node ) {
+        if ( $node->nodeType === XML_TEXT_NODE ) {
+            $full_text .= $node->textContent;
+        } elseif ( $node->nodeType === XML_ELEMENT_NODE && strtolower( $node->nodeName ) !== 'a' ) {
+            // Include element text but skip anchor elements ("Weblink")
+            $full_text .= ' ' . $node->textContent . ' ';
+        }
+    }
 
-    // Clean up unicode non-breaking spaces and other special characters
-    $full_text = str_replace( array( "\u{00a0}", "\xc2\xa0", '&nbsp;' ), ' ', $full_text );
-    $full_text = preg_replace( '/\s+/', ' ', $full_text ); // Normalize whitespace
+    // Normalize all whitespace including non-breaking spaces (use /u for Unicode)
+    $full_text = preg_replace( '/[\s\x{00A0}]+/u', ' ', $full_text );
     $full_text = trim( $full_text );
 
     if ( empty( $full_text ) ) {
         return null;
     }
 
-    // Extract contact from <a> tag if present
+    // Extract contact from <a> tag if present - store full URL or phone in [contact] field
     $contact = '';
     $links = $element->getElementsByTagName( 'a' );
     if ( $links->length > 0 ) {
         $link = $links->item( 0 );
         $href = $link->getAttribute( 'href' );
-        // Extract domain or use link text
         if ( $href ) {
-            $parsed = parse_url( $href );
-            $contact = isset( $parsed['host'] ) ? preg_replace( '/^www\./', '', $parsed['host'] ) : $link->textContent;
+            // Check if it's a phone number
+            if ( preg_match( '/^tel:(.+)$/', $href, $tel_match ) ) {
+                $contact = trim( $tel_match[1] );
+            } else {
+                // Store the full URL, removing #focus fragments from bookwhen links
+                $contact = preg_replace( '/#focus=.*$/', '', $href );
+            }
         }
     }
 
-    // Extract time from parentheses: (9:30 - 10:30) or (9:30-10:30)
+    // Extract time from parentheses: (9:30 - 10:30) or handle missing closing bracket
     $time = '';
     if ( preg_match( '/\((\d{1,2}[:.]\d{2}\s*[-–]\s*\d{1,2}[:.]\d{2})\)/', $full_text, $matches ) ) {
         $time = str_replace( '.', ':', $matches[1] );
-        $time = preg_replace( '/\s*[-–]\s*/', ' - ', $time ); // Normalize dash
+        $time = preg_replace( '/\s*[-–]\s*/', ' - ', $time );
+    } elseif ( preg_match( '/\((\d{1,2}[:.]\d{2}\s*[-–]\s*\d{1,2}[:.]\d{2})/', $full_text, $matches ) ) {
+        // Handle missing closing bracket
+        $time = str_replace( '.', ':', $matches[1] );
+        $time = preg_replace( '/\s*[-–]\s*/', ' - ', $time );
     }
 
     // Extract frequency keywords
-    $frequency = 'Weekly'; // Default
+    $frequency = 'Weekly';
     $freq_patterns = array(
-        '/1st\s*(and|&)\s*3rd\s*week/i' => '1st & 3rd weeks',
-        '/2nd\s*(and|&)\s*4th\s*week/i' => '2nd & 4th weeks',
-        '/1st\s*week/i' => '1st week',
-        '/2nd\s*week/i' => '2nd week',
-        '/3rd\s*week/i' => '3rd week',
-        '/4th\s*week/i' => '4th week',
-        '/last\s*(week|[a-z]+day)/i' => 'Last week',
-        '/1st\s*[a-z]+day/i' => '1st of month',
-        '/2nd\s*[a-z]+day/i' => '2nd of month',
-        '/3rd\s*[a-z]+day/i' => '3rd of month',
-        '/4th\s*[a-z]+day/i' => '4th of month',
-        '/last\s*[a-z]+day/i' => 'Last of month',
+        '/1st\s*(?:and|&)\s*3rd\s*week/i' => '1st & 3rd weeks',
+        '/last\s+friday\s+of\s+every\s+month/i' => 'Last Friday of every month',
+        '/2nd\s*(?:and|&)\s*4th\s*week/i' => '2nd & 4th weeks',
+        '/3rd\s+week\s+of\s+the\s+month/i' => '3rd week of the month',
+        '/1st\s+week\s+of\s+the\s+month/i' => '1st week of the month',
+        '/last\s+saturday\s+of\s+the\s+month/i' => 'Last Saturday of the month',
+        '/first\s+sunday\s+of\s+the\s+month/i' => 'First Sunday of the month',
+        '/2nd\s+thursday/i' => '2nd Thursday',
+        '/4th\s+thursday/i' => '4th Thursday',
+        '/1st\s+week/i' => '1st week',
+        '/2nd\s+week/i' => '2nd week',
+        '/3rd\s+week/i' => '3rd week',
+        '/4th\s+week/i' => '4th week',
+        '/last\s+week/i' => 'Last week',
         '/weekly/i' => 'Weekly',
     );
 
@@ -2038,29 +2096,35 @@ function northam_parse_class_entry( $element ) {
         }
     }
 
-    // Extract class name (everything before the time parentheses)
+    // Extract class name
     $name = $full_text;
     // Remove time
-    $name = preg_replace( '/\(\d{1,2}[:.]\d{2}\s*[-–]\s*\d{1,2}[:.]\d{2}\)/', '', $name );
-    // Remove frequency keywords
-    $name = preg_replace( '/(weekly|1st|2nd|3rd|4th|last)\s*(and|&)?\s*(week|[a-z]+day)?/i', '', $name );
-    // Remove "Weblink" text
+    $name = preg_replace( '/\(\d{1,2}[:.]\d{2}\s*[-–]\s*\d{1,2}[:.]\d{2}\)?/', '', $name );
+    // Remove "Weblink" text first (appears before frequency words in some entries)
     $name = preg_replace( '/\s*weblink\s*/i', '', $name );
-    // Clean up
-    $name = trim( preg_replace( '/\s+/', ' ', $name ) );
+    // Remove frequency patterns
+    $name = preg_replace( '/\s*1st\s*(?:and|&)\s*3rd\s*weeks?/i', '', $name );
+    $name = preg_replace( '/\s*last\s+friday\s+of\s+every\s+month/i', '', $name );
+    $name = preg_replace( '/\s*\d+(?:st|nd|rd|th)\s+week\s+of\s+the\s+month/i', '', $name );
+    $name = preg_replace( '/\s*last\s+saturday\s+of\s+the\s+month/i', '', $name );
+    $name = preg_replace( '/\s*first\s+sunday\s+of\s+the\s+month/i', '', $name );
+    $name = preg_replace( '/\s*\d+(?:st|nd|rd|th)\s+thursday/i', '', $name );
+    $name = preg_replace( '/\s*starting\s+\d+(?:st|nd|rd|th)?\s+[a-z]+\s+\d{4}/i', '', $name );
+    $name = preg_replace( '/\s*weekly\s*$/iu', '', $name ); // Remove trailing "Weekly" (added /u for Unicode whitespace)
+    $name = preg_replace( '/\s+/u', ' ', $name );
+    $name = trim( $name );
 
     if ( empty( $name ) ) {
         return null;
     }
 
-    $clean_name = northam_clean_text( $name );
-
     return array(
-        'name'      => $clean_name,
+        'name'      => northam_clean_text( $name ),
         'time'      => northam_clean_text( $time ),
         'frequency' => northam_clean_text( $frequency ),
         'contact'   => northam_clean_text( $contact ),
-        'category'  => northam_guess_class_category( $clean_name ),
+        'phone'     => '', // Manual override only
+        'category'  => northam_guess_class_category( $name ),
     );
 }
 
@@ -2294,6 +2358,9 @@ require_once NORTHAM_THEME_DIR . '/inc/meta-boxes.php';
 
 // Block patterns
 require_once NORTHAM_THEME_DIR . '/inc/block-patterns.php';
+
+// SEO enhancements (structured data, sitemap, alt text)
+require_once NORTHAM_THEME_DIR . '/inc/seo.php';
 
 // Sample data importer (admin only)
 if ( is_admin() ) {

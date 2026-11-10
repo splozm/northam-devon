@@ -282,47 +282,9 @@ get_header();
         <h2 class="northam-cta-title">Run a community group?</h2>
         <p class="northam-cta-description">Get your group listed here to reach more villagers.</p>
 
-        <div data-fs-success style="color: var(--northam-primary); font-weight: 500; padding: 1rem; background: #d4edda; border-radius: 0.5rem; margin-top: 1rem; display: none;"></div>
-        <div data-fs-error style="color: #dc3545; padding: 1rem; background: #f8d7da; border-radius: 0.5rem; margin-top: 1rem; display: none;"></div>
-
-        <form id="add-group-form" style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px; margin: 1.5rem auto 0; text-align: left;">
-            <input type="hidden" name="form_type" value="add_group" />
-            <input type="hidden" name="page_url" id="add-group-page-url" />
-            <input type="text" name="_gotcha" style="display: none;" />
-
-            <div>
-                <label for="add-group-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Your Name</label>
-                <input type="text" id="add-group-name" name="name" class="northam-form-input" required data-fs-field />
-                <span data-fs-error="name" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <div>
-                <label for="add-group-email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email</label>
-                <input type="email" id="add-group-email" name="email" class="northam-form-input" required data-fs-field />
-                <span data-fs-error="email" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <div>
-                <label for="add-group-group-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Group Name</label>
-                <input type="text" id="add-group-group-name" name="group_name" class="northam-form-input" required data-fs-field />
-                <span data-fs-error="group_name" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <div>
-                <label for="add-group-message" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tell us about your group</label>
-                <textarea id="add-group-message" name="message" class="northam-form-textarea" rows="3" placeholder="What does your group do, when/where do you meet..." required data-fs-field></textarea>
-                <span data-fs-error="message" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <button type="submit" class="northam-btn northam-btn-accent" data-fs-submit-btn>Submit Your Group</button>
-        </form>
-
-        <script>
-            document.getElementById('add-group-page-url').value = window.location.href;
-            window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
-            formspree('initForm', { formElement: '#add-group-form', formId: 'xgorqwyn' });
-        </script>
-        <script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+        <div style="max-width: 500px; margin: 1.5rem auto 0; text-align: left;">
+            <?php echo do_shortcode( '[fluentform id="6"]' ); ?>
+        </div>
     </div>
 </section>
 

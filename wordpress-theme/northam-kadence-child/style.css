@@ -1405,13 +1405,78 @@ a.northam-listing-card-link:focus {
   gap: 1rem;
 }
 
-/* Show Formspree success/error messages when they have content */
-[data-fs-success]:not(:empty) {
-    display: block !important;
+/* ==========================================================================
+   FLUENT FORMS STYLING
+   Match existing northam-form-input, northam-form-textarea, northam-btn styles
+   ========================================================================== */
+
+/* Form container */
+.fluentform {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: left;
 }
 
-[data-fs-error]:not(:empty) {
-    display: block !important;
+/* Input fields and textareas */
+.fluentform .ff-el-form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: var(--northam-font-body);
+  font-size: var(--northam-text-base);
+  color: var(--northam-foreground);
+  background-color: var(--northam-card);
+  border: 1px solid var(--northam-border);
+  border-radius: var(--northam-radius);
+  transition: border-color var(--northam-transition-fast), box-shadow var(--northam-transition-fast);
+}
+
+.fluentform .ff-el-form-control:focus {
+  outline: none;
+  border-color: var(--northam-primary);
+  box-shadow: 0 0 0 3px hsl(175, 65%, 40%, 0.15);
+}
+
+.fluentform .ff-el-form-control::placeholder {
+  color: var(--northam-muted-foreground);
+}
+
+/* Labels */
+.fluentform .ff-el-input--label label {
+  display: block;
+  font-family: var(--northam-font-body);
+  font-size: var(--northam-text-base);
+  font-weight: 500;
+  color: var(--northam-foreground);
+  margin-bottom: 0.5rem;
+}
+
+/* Submit button - override Fluent's inline styles */
+.fluentform .ff-btn-submit {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-family: var(--northam-font-body);
+  font-size: var(--northam-text-base);
+  font-weight: 600;
+  color: white;
+  background: var(--northam-primary) !important;
+  border: none;
+  border-radius: var(--northam-radius);
+  cursor: pointer;
+  transition: background-color var(--northam-transition-fast), transform var(--northam-transition-fast);
+}
+
+.fluentform .ff-btn-submit:hover {
+  background: var(--northam-primary-dark) !important;
+  transform: translateY(-1px);
+}
+
+.fluentform .ff-btn-submit:active {
+  transform: translateY(0);
+}
+
+/* Form field spacing */
+.fluentform .ff-el-group {
+  margin-bottom: 1rem;
 }
 
 
@@ -5167,4 +5232,123 @@ span[class*="dashicons"],
 		width: 1.5rem;
 		height: 1.5rem;
 	}
+}
+
+/* ==========================================================================
+   GENERIC PAGE TEMPLATE (page.php) - About, Privacy Policy, etc.
+   ========================================================================== */
+
+.northam-page .content-container {
+  max-width: 820px;
+}
+
+.northam-page-header {
+  margin-bottom: 2rem;
+}
+
+.northam-page-hero {
+  margin: 0 0 2.5rem;
+  border-radius: var(--northam-radius-xl);
+  overflow: hidden;
+}
+
+.northam-page-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+/* Body copy */
+.northam-page-content {
+  font-size: var(--northam-text-lg);
+  line-height: 1.7;
+  color: var(--northam-foreground);
+}
+
+.northam-page-content > * + * {
+  margin-top: 1.25rem;
+}
+
+.northam-page-content p {
+  margin-bottom: 0;
+}
+
+.northam-page-content h2 {
+  font-size: var(--northam-text-2xl);
+  margin: 2.75rem 0 0.75rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--northam-border);
+}
+
+.northam-page-content h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.northam-page-content h3 {
+  font-size: var(--northam-text-xl);
+  margin: 2rem 0 0.5rem;
+}
+
+.northam-page-content ul,
+.northam-page-content ol {
+  padding-left: 1.25rem;
+}
+
+.northam-page-content li + li {
+  margin-top: 0.5rem;
+}
+
+.northam-page-content a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Contact / form blocks sitting in page content */
+.northam-page-content form {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: var(--northam-muted);
+  border-radius: var(--northam-radius-lg);
+}
+
+.northam-page-content form input[type="text"],
+.northam-page-content form input[type="email"],
+.northam-page-content form textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: var(--northam-text-base);
+  border: 1px solid var(--northam-border);
+  border-radius: var(--northam-radius);
+  background-color: var(--northam-card);
+}
+
+.northam-page-content form button,
+.northam-page-content form input[type="submit"] {
+  background-color: var(--northam-primary);
+  color: var(--northam-primary-foreground);
+  border: none;
+  border-radius: var(--northam-radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.northam-page-content form button:hover,
+.northam-page-content form input[type="submit"]:hover {
+  background-color: var(--northam-primary-dark);
+}
+
+.northam-page-links {
+  margin-top: 2rem;
+  font-size: var(--northam-text-sm);
+}
+
+@media (max-width: 767px) {
+  .northam-page-content {
+    font-size: var(--northam-text-base);
+  }
 }

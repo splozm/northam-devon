@@ -294,28 +294,9 @@ get_header();
             Get updates on events, news, and community happenings in Northam.
         </p>
         <!-- Newsletter Signup Form -->
-        <div data-fs-success style="color: var(--northam-primary); font-weight: 500; display: none;"></div>
-        <div data-fs-error style="color: #dc3545; display: none;"></div>
-
-        <form id="newsletter-form" style="display: flex; flex-direction: column; gap: 0.75rem; max-width: 400px; margin: 0 auto;">
-            <input type="hidden" name="form_type" value="newsletter" />
-            <input type="hidden" name="page_url" id="newsletter-page-url" />
-            <input type="hidden" name="page_title" id="newsletter-page-title" />
-            <input type="text" name="_gotcha" style="display: none;" />
-
-            <input type="email" name="email" placeholder="Your email address" class="northam-form-input" style="text-align: center;" required data-fs-field />
-            <span data-fs-error="email" style="color: #dc3545; font-size: 0.875rem;"></span>
-
-            <button type="submit" class="northam-btn northam-btn-primary" data-fs-submit-btn>Subscribe</button>
-        </form>
-
-        <script>
-            document.getElementById('newsletter-page-url').value = window.location.href;
-            document.getElementById('newsletter-page-title').value = document.title;
-            window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
-            formspree('initForm', { formElement: '#newsletter-form', formId: 'xgorqwyn' });
-        </script>
-        <script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+        <div style="max-width: 400px; margin: 0 auto;">
+            <?php echo do_shortcode( '[fluentform id="4"]' ); ?>
+        </div>
     </div>
 </section>
 

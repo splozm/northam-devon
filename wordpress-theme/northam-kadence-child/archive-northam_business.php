@@ -259,47 +259,9 @@ $category_colors = array(
         <h2>Own a local business?</h2>
         <p>Get your business listed in our directory with an Instagram feed showcase. It's free for all Northam businesses.</p>
 
-        <div data-fs-success style="color: var(--northam-primary); font-weight: 500; padding: 1rem; background: #d4edda; border-radius: 0.5rem; margin-top: 1rem; display: none;"></div>
-        <div data-fs-error style="color: #dc3545; padding: 1rem; background: #f8d7da; border-radius: 0.5rem; margin-top: 1rem; display: none;"></div>
-
-        <form id="add-business-form" style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px; margin: 1.5rem auto 0; text-align: left;">
-            <input type="hidden" name="form_type" value="add_business" />
-            <input type="hidden" name="page_url" id="add-business-page-url" />
-            <input type="text" name="_gotcha" style="display: none;" />
-
-            <div>
-                <label for="add-business-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Your Name</label>
-                <input type="text" id="add-business-name" name="name" class="northam-form-input" required data-fs-field />
-                <span data-fs-error="name" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <div>
-                <label for="add-business-email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email</label>
-                <input type="email" id="add-business-email" name="email" class="northam-form-input" required data-fs-field />
-                <span data-fs-error="email" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <div>
-                <label for="add-business-business-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Business Name</label>
-                <input type="text" id="add-business-business-name" name="business_name" class="northam-form-input" required data-fs-field />
-                <span data-fs-error="business_name" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <div>
-                <label for="add-business-message" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Tell us about your business</label>
-                <textarea id="add-business-message" name="message" class="northam-form-textarea" rows="3" placeholder="Brief description, location, services offered..." required data-fs-field></textarea>
-                <span data-fs-error="message" style="color: #dc3545; font-size: 0.875rem;"></span>
-            </div>
-
-            <button type="submit" class="northam-btn bg-accent" data-fs-submit-btn>Submit Your Business</button>
-        </form>
-
-        <script>
-            document.getElementById('add-business-page-url').value = window.location.href;
-            window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
-            formspree('initForm', { formElement: '#add-business-form', formId: 'xgorqwyn' });
-        </script>
-        <script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+        <div style="max-width: 500px; margin: 1.5rem auto 0; text-align: left;">
+            <?php echo do_shortcode( '[fluentform id="5"]' ); ?>
+        </div>
     </div>
 </section>
 

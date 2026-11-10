@@ -568,6 +568,9 @@ function northam_regular_classes_meta_box_callback( $post ) {
                         <input type="text" name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][contact]"
                                value="<?php echo esc_attr( $class['contact'] ?? '' ); ?>"
                                placeholder="Contact" style="width: 140px;">
+                        <input type="text" name="northam_classes[<?php echo esc_attr( $day ); ?>][<?php echo $index; ?>][phone]"
+                               value="<?php echo esc_attr( $class['phone'] ?? '' ); ?>"
+                               placeholder="Phone (optional)" style="width: 120px;">
                         <button type="button" class="button northam-remove-class" style="color: #a00;">&times;</button>
                     </div>
                     <?php endforeach;
@@ -601,6 +604,7 @@ function northam_regular_classes_meta_box_callback( $post ) {
                 '<select name="northam_classes[' + day + '][' + index + '][category]" style="width: 140px;">' + categoryOptions + '</select>' +
                 '<input type="text" name="northam_classes[' + day + '][' + index + '][frequency]" value="Weekly" placeholder="e.g. Weekly" style="width: 100px;">' +
                 '<input type="text" name="northam_classes[' + day + '][' + index + '][contact]" placeholder="Contact" style="width: 140px;">' +
+                '<input type="text" name="northam_classes[' + day + '][' + index + '][phone]" placeholder="Phone (optional)" style="width: 120px;">' +
                 '<button type="button" class="button northam-remove-class" style="color: #a00;">&times;</button>' +
                 '</div>';
 
@@ -636,6 +640,22 @@ function northam_regular_classes_meta_box_callback( $post ) {
                 },
                 success: function(response) {
                     if (response.success && response.data.classes) {
+                        // Preserve manually-entered phone numbers before clearing
+                        var manualPhones = {};
+                        $('.northam-day-classes').each(function() {
+                            var day = $(this).data('day');
+                            $(this).find('.northam-class-row').each(function() {
+                                var $row = $(this);
+                                var time = $row.find('input[name*="[time]"]').val() || '';
+                                var name = $row.find('input[name*="[name]"]').val() || '';
+                                var phone = $row.find('input[name*="[phone]"]').val() || '';
+                                if (phone && time && name) {
+                                    var key = day + '|' + time.trim() + '|' + name.trim();
+                                    manualPhones[key] = phone;
+                                }
+                            });
+                        });
+
                         // Clear existing classes
                         $('.northam-day-classes').each(function() {
                             $(this).empty();
@@ -648,6 +668,10 @@ function northam_regular_classes_meta_box_callback( $post ) {
                         $.each(classes, function(day, dayClasses) {
                             var $container = $('.northam-day-classes[data-day="' + day + '"]');
                             $.each(dayClasses, function(index, cls) {
+                                // Check if there's a manually-entered phone for this class
+                                var key = day + '|' + (cls.time || '').trim() + '|' + (cls.name || '').trim();
+                                var preservedPhone = manualPhones[key] || cls.phone || '';
+
                                 // Build category select with correct option selected
                                 var catSelect = '<select name="northam_classes[' + day + '][' + index + '][category]" style="width: 140px;">';
                                 var catOptionsArray = categoryOptions.split('</option>');
@@ -669,6 +693,7 @@ function northam_regular_classes_meta_box_callback( $post ) {
                                     catSelect +
                                     '<input type="text" name="northam_classes[' + day + '][' + index + '][frequency]" value="' + (cls.frequency || 'Weekly') + '" placeholder="e.g. Weekly" style="width: 100px;">' +
                                     '<input type="text" name="northam_classes[' + day + '][' + index + '][contact]" value="' + (cls.contact || '') + '" placeholder="Contact" style="width: 140px;">' +
+                                    '<input type="text" name="northam_classes[' + day + '][' + index + '][phone]" value="' + preservedPhone + '" placeholder="Phone (optional)" style="width: 120px;">' +
                                     '<button type="button" class="button northam-remove-class" style="color: #a00;">&times;</button>' +
                                     '</div>';
                                 $container.append(row);
@@ -724,12 +749,21 @@ function northam_save_regular_classes_meta( $post_id ) {
                 foreach ( $day_classes as $class ) {
                     // Only save if at least name is filled
                     if ( ! empty( $class['name'] ) ) {
+                        $contact_value = $class['contact'] ?? '';
+                        // Use esc_url_raw for URLs, sanitize_text_field for phone numbers
+                        if ( ! empty( $contact_value ) && preg_match( '/^https?:\/\//i', $contact_value ) ) {
+                            $contact_value = esc_url_raw( $contact_value );
+                        } else {
+                            $contact_value = sanitize_text_field( $contact_value );
+                        }
+
                         $classes[ $day ][] = array(
                             'time'      => sanitize_text_field( $class['time'] ?? '' ),
                             'name'      => sanitize_text_field( $class['name'] ?? '' ),
                             'category'  => sanitize_text_field( $class['category'] ?? '' ),
                             'frequency' => sanitize_text_field( $class['frequency'] ?? 'Weekly' ),
-                            'contact'   => sanitize_text_field( $class['contact'] ?? '' ),
+                            'contact'   => $contact_value,
+                            'phone'     => sanitize_text_field( $class['phone'] ?? '' ),
                         );
                     }
                 }

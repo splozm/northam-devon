@@ -650,50 +650,12 @@ $venues = get_posts( array(
 		<div class="northam-container" style="text-align: center;">
 			<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.75rem;">Have an event to share?</h2>
 			<p style="color: hsl(200, 30%, 45%); margin-bottom: 1.5rem; max-width: 32rem; margin-left: auto; margin-right: auto;">
-				If you're hosting an event in Northam, let us know and we'll add it to the calendar.
+				If you're hosting an event in Northam, let us know and we'll add it to the calendar. We would love to give you your own page if you need it. Just get in touch with us via this form and someone will get back to you.
 			</p>
 
-			<div data-fs-success style="color: var(--northam-primary); font-weight: 500; padding: 1rem; background: #d4edda; border-radius: 0.5rem; margin-top: 1rem; display: none;"></div>
-			<div data-fs-error style="color: #dc3545; padding: 1rem; background: #f8d7da; border-radius: 0.5rem; margin-top: 1rem; display: none;"></div>
-
-			<form id="submit-event-form" style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px; margin: 1.5rem auto 0; text-align: left;">
-				<input type="hidden" name="form_type" value="submit_event" />
-				<input type="hidden" name="page_url" id="submit-event-page-url" />
-				<input type="text" name="_gotcha" style="display: none;" />
-
-				<div>
-					<label for="submit-event-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Your Name</label>
-					<input type="text" id="submit-event-name" name="name" class="northam-form-input" required data-fs-field />
-					<span data-fs-error="name" style="color: #dc3545; font-size: 0.875rem;"></span>
-				</div>
-
-				<div>
-					<label for="submit-event-email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email</label>
-					<input type="email" id="submit-event-email" name="email" class="northam-form-input" required data-fs-field />
-					<span data-fs-error="email" style="color: #dc3545; font-size: 0.875rem;"></span>
-				</div>
-
-				<div>
-					<label for="submit-event-event-name" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Event Name</label>
-					<input type="text" id="submit-event-event-name" name="event_name" class="northam-form-input" required data-fs-field />
-					<span data-fs-error="event_name" style="color: #dc3545; font-size: 0.875rem;"></span>
-				</div>
-
-				<div>
-					<label for="submit-event-message" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Event Details</label>
-					<textarea id="submit-event-message" name="message" class="northam-form-textarea" rows="4" placeholder="Date, time, location, description of your event..." required data-fs-field></textarea>
-					<span data-fs-error="message" style="color: #dc3545; font-size: 0.875rem;"></span>
-				</div>
-
-				<button type="submit" class="northam-btn northam-btn-accent" data-fs-submit-btn>Submit Event</button>
-			</form>
-
-			<script>
-				document.getElementById('submit-event-page-url').value = window.location.href;
-				window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
-				formspree('initForm', { formElement: '#submit-event-form', formId: 'xgorqwyn' });
-			</script>
-			<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+			<div style="max-width: 500px; margin: 1.5rem auto 0; text-align: left;">
+				<?php echo do_shortcode( '[fluentform id="7"]' ); ?>
+			</div>
 		</div>
 	</div>
 

@@ -185,16 +185,39 @@ while ( have_posts() ) :
 										<?php foreach ( $day_classes as $class ) :
 											$is_weekly = strtolower( $class['frequency'] ?? '' ) === 'weekly';
 											$contact = $class['contact'] ?? '';
+											$phone = $class['phone'] ?? '';
+
+											// Detect what type of contact we have
 											$contact_url = '';
-											if ( ! empty( $contact ) ) {
-												// Check if it's a URL or domain
-												if ( filter_var( $contact, FILTER_VALIDATE_URL ) ) {
+											$contact_phone = '';
+											$contact_label = '';
+
+											if ( $contact ) {
+												// Check if it's a full URL
+												if ( preg_match( '/^https?:\/\//i', $contact ) ) {
 													$contact_url = $contact;
-												} elseif ( preg_match( '/^[a-z0-9]+([\-\.][a-z0-9]+)*\.[a-z]{2,}$/i', $contact ) ) {
-													// Looks like a domain
+													// Generate label from URL
+													$url_lower = strtolower( $contact );
+													if ( strpos( $url_lower, 'facebook.com' ) !== false ) {
+														$contact_label = 'Facebook';
+													} elseif ( strpos( $url_lower, 'bookwhen.com' ) !== false ) {
+														$contact_label = 'Book online';
+													} elseif ( strpos( $url_lower, 'sites.google.com' ) !== false || strpos( $url_lower, 'google.com/view' ) !== false ) {
+														$contact_label = 'Website';
+													} else {
+														// Extract domain for label
+														$parsed = parse_url( $contact );
+														$contact_label = isset( $parsed['host'] ) ? preg_replace( '/^www\./', '', $parsed['host'] ) : 'Website';
+													}
+												}
+												// Check if it's a phone number (digits with optional spaces, dashes, parentheses)
+												elseif ( preg_match( '/^[\d\s\-\(\)]+$/', $contact ) ) {
+													$contact_phone = $contact;
+												}
+												// Check if it's a bare domain - treat as URL
+												elseif ( preg_match( '/^[a-z0-9]+([\-\.][a-z0-9]+)*\.[a-z]{2,}$/i', $contact ) ) {
 													$contact_url = 'https://' . $contact;
-												} elseif ( strtolower( $contact ) === 'facebook' ) {
-													$contact_url = '';
+													$contact_label = $contact;
 												}
 											}
 										?>
@@ -207,12 +230,25 @@ while ( have_posts() ) :
 													</span>
 												</td>
 												<td class="northam-class-contact">
-													<?php if ( $contact_url ) : ?>
-														<a href="<?php echo esc_url( $contact_url ); ?>" target="_blank" rel="noopener noreferrer">
-															<?php echo esc_html( $contact ); ?>
+													<?php if ( $contact_url && $phone ) : ?>
+														<a href="<?php echo esc_url( $contact_url ); ?>" target="_blank" rel="noopener">
+															<?php echo esc_html( $contact_label ); ?>
+														</a> |
+														<a href="tel:<?php echo esc_attr( str_replace( ' ', '', $phone ) ); ?>">
+															<?php echo esc_html( $phone ); ?>
 														</a>
-													<?php elseif ( $contact ) : ?>
-														<?php echo esc_html( $contact ); ?>
+													<?php elseif ( $contact_url ) : ?>
+														<a href="<?php echo esc_url( $contact_url ); ?>" target="_blank" rel="noopener">
+															<?php echo esc_html( $contact_label ); ?>
+														</a>
+													<?php elseif ( $phone ) : ?>
+														<a href="tel:<?php echo esc_attr( str_replace( ' ', '', $phone ) ); ?>">
+															<?php echo esc_html( $phone ); ?>
+														</a>
+													<?php elseif ( $contact_phone ) : ?>
+														<a href="tel:<?php echo esc_attr( str_replace( ' ', '', $contact_phone ) ); ?>">
+															<?php echo esc_html( $contact_phone ); ?>
+														</a>
 													<?php else : ?>
 														-
 													<?php endif; ?>
