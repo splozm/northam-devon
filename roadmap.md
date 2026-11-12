@@ -1,9 +1,6 @@
 # Roadmap
 
-- [ ] Logo + favicon: settle the direction, then wire the mark into the header, footer, and favicon.
-  - Simple wordmark concepts built (`src/assets/northam-logo-simple-a.png`, `src/assets/northam-logo-simple-b.png`).
-  - Round wave mark cropped from concept B reads well at 64px but has edge fringing and a flattened bottom curve.
-  - Deep-teal lettering vanishes on the dark teal footer — needs a light-on-dark variant.
-  - Open: user says the direction is wrong ("needs a different direction").
-  - Reference: uploaded `image-5.png` is the CURRENT header logo (teal circle + white map pin, "Northam" serif + "Devon" sans) — the direction to move away from.
-  - Exploring three simple directions: wordmark only, wordmark + single coral wave stroke, teal monogram tile with white "N".
+- [x] Logo + favicon: direction settled on the "N tile" — deep-teal rounded tile with a serif N beside the Northam / Devon wordmark.
+  - Built as `src/components/brand/Logo.tsx` (token-themed, flips for dark surfaces) and wired into `Header.tsx` and `Footer.tsx`.
+  - Favicon: `public/favicon.png` (64px, from the tile), declared in `index.html`; old `public/favicon.ico` removed.
+  - Rejected drafts deleted; chosen reference kept at `src/assets/northam-dir-3-monogram.png`.
