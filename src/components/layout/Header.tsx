@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, MapPin, Calendar, Store, Compass, Users, History } from "lucide-react";
+import { Menu, X, Calendar, Store, Compass, Users, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/brand/Logo";
 
 const navItems = [
   { href: "/events", label: "Events", icon: Calendar },
@@ -20,14 +21,8 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <MapPin className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="hidden sm:block">
-              <span className="font-heading text-xl font-bold text-foreground">Northam</span>
-              <span className="block text-xs text-muted-foreground -mt-1">Devon</span>
-            </div>
+          <Link to="/" className="group" aria-label="Northam Devon — home">
+            <Logo textClassName="hidden sm:block" />
           </Link>
 
           {/* Desktop Navigation */}

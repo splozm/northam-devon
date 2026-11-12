@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { MapPin, Mail, Phone, Facebook, Instagram, Twitter } from "lucide-react";
+import Logo from "@/components/brand/Logo";
 
 const Footer = () => {
   return (
@@ -9,15 +10,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* About */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-heading text-xl font-bold">Northam</span>
-                <span className="block text-xs text-primary-foreground/70 -mt-1">Devon</span>
-              </div>
-            </div>
+            <Logo variant="onDark" className="mb-4" />
             <p className="text-primary-foreground/80 text-sm leading-relaxed">
               A charming coastal village where community spirit meets Devon's stunning shores. 
               Discover local events, businesses, and the rich heritage of Northam.
