@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.0.2' );
+define( 'NORTHAM_VERSION', '1.0.3' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -2299,3 +2299,79 @@ require_once NORTHAM_THEME_DIR . '/inc/block-patterns.php';
 if ( is_admin() ) {
     require_once NORTHAM_THEME_DIR . '/inc/sample-data.php';
 }
+/**
+ * =============================================================================
+ * OPEN GRAPH / SOCIAL SHARE TAGS
+ * =============================================================================
+ * Gives Facebook, WhatsApp etc. a title, description and image for link
+ * previews. Skips output if an SEO plugin is already handling it.
+ */
+function northam_open_graph_tags() {
+    if ( is_admin() || defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || defined( 'AIOSEO_VERSION' ) ) {
+        return;
+    }
+
+    $title       = wp_get_document_title();
+    $description = get_bloginfo( 'description' );
+    $url         = home_url( add_query_arg( array() ) );
+    $type        = 'website';
+    $image       = '';
+
+    if ( is_singular() ) {
+        $post_id = get_queried_object_id();
+        $url     = get_permalink( $post_id );
+        $type    = is_front_page() ? 'website' : 'article';
+
+        $excerpt = has_excerpt( $post_id ) ? get_the_excerpt( $post_id ) : get_post_field( 'post_content', $post_id );
+        $excerpt = wp_trim_words( wp_strip_all_tags( strip_shortcodes( $excerpt ) ), 30, '…' );
+        if ( $excerpt ) {
+            $description = $excerpt;
+        }
+
+        // Featured image, then first gallery image (matches hero logic)
+        if ( has_post_thumbnail( $post_id ) ) {
+            $image = get_the_post_thumbnail_url( $post_id, 'large' );
+        } else {
+            $gallery = get_post_meta( $post_id, '_northam_gallery', true );
+            if ( $gallery ) {
+                $ids   = array_filter( array_map( 'absint', explode( ',', $gallery ) ) );
+                $image = $ids ? wp_get_attachment_image_url( reset( $ids ), 'large' ) : '';
+            }
+        }
+    }
+
+    // Fallbacks: homepage featured image, then site icon
+    if ( ! $image ) {
+        $front_id = (int) get_option( 'page_on_front' );
+        if ( $front_id && has_post_thumbnail( $front_id ) ) {
+            $image = get_the_post_thumbnail_url( $front_id, 'large' );
+        }
+    }
+    if ( ! $image && has_site_icon() ) {
+        $image = get_site_icon_url( 512 );
+    }
+
+    if ( ! $description ) {
+        $description = 'What\'s on in Northam, Devon – local events, venues, businesses and community groups.';
+    }
+
+    $tags = array(
+        'og:site_name'   => get_bloginfo( 'name' ),
+        'og:locale'      => 'en_GB',
+        'og:type'        => $type,
+        'og:title'       => $title,
+        'og:description' => $description,
+        'og:url'         => $url,
+        'og:image'       => $image,
+    );
+
+    echo "\n<!-- Northam Open Graph -->\n";
+    foreach ( $tags as $property => $content ) {
+        if ( $content ) {
+            printf( '<meta property="%s" content="%s" />' . "\n", esc_attr( $property ), esc_attr( $content ) );
+        }
+    }
+    printf( '<meta name="twitter:card" content="%s" />' . "\n", $image ? 'summary_large_image' : 'summary' );
+    printf( '<meta name="description" content="%s" />' . "\n", esc_attr( $description ) );
+}
+add_action( 'wp_head', 'northam_open_graph_tags', 1 );
