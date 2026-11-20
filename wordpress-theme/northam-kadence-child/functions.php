@@ -2538,3 +2538,54 @@ require_once NORTHAM_THEME_DIR . '/inc/seo.php';
 if ( is_admin() ) {
     require_once NORTHAM_THEME_DIR . '/inc/sample-data.php';
 }
+/**
+ * =============================================================================
+ * CLASS DEEP LINKS - STABLE ID GENERATION
+ * =============================================================================
+ */
+
+/**
+ * Generate a stable ID for a regular class
+ * Format: {name}-{venue}-{day}-{HHMM}
+ * Example: yoga-northam-hall-mon-0930
+ * 
+ * @param array $item Class item with keys: name, venue_name, time
+ * @param string $day_key Date key in Y-m-d format (e.g. "2026-11-23")
+ * @return string Sanitized class ID
+ */
+function northam_class_id( $item, $day_key ) {
+    $name = isset( $item['name'] ) ? $item['name'] : '';
+    $venue = isset( $item['venue_name'] ) ? $item['venue_name'] : '';
+    $time_str = isset( $item['time'] ) ? $item['time'] : '';
+    
+    // Extract day of week from date key (e.g. "2026-11-23" -> "mon")
+    $timestamp = strtotime( $day_key );
+    $day_abbr = strtolower( date( 'D', $timestamp ) ); // mon, tue, wed, etc.
+    
+    // Extract start time in HHMM format from time string (e.g. "9:30 am - 10:30 am" -> "0930")
+    $time_hhmm = '';
+    if ( preg_match( '/(\d{1,2}):(\d{2})\s*(am|pm)/i', $time_str, $matches ) ) {
+        $hour = intval( $matches[1] );
+        $minute = $matches[2];
+        $meridiem = strtolower( $matches[3] );
+        
+        // Convert to 24-hour format
+        if ( $meridiem === 'pm' && $hour !== 12 ) {
+            $hour += 12;
+        } elseif ( $meridiem === 'am' && $hour === 12 ) {
+            $hour = 0;
+        }
+        
+        $time_hhmm = sprintf( '%02d%02d', $hour, $minute );
+    }
+    
+    // Build the ID: name-venue-day-HHMM
+    $parts = array(
+        sanitize_title( $name ),
+        sanitize_title( $venue ),
+        $day_abbr,
+        $time_hhmm,
+    );
+    
+    return implode( '-', array_filter( $parts ) );
+}

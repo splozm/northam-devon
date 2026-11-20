@@ -203,9 +203,97 @@ $venues = get_posts( array(
 				}
 			}
 
-			// Allow manual week override via ?week= (only if no ?e= present)
-			if ( isset( $_GET['week'] ) && ! isset( $_GET['e'] ) ) {
+
+			// Deep link: if ?c= is present, find that class and calculate its week
+			$deep_link_class_id = isset( $_GET['c'] ) ? sanitize_text_field( $_GET['c'] ) : '';
+			
+			if ( ! empty( $deep_link_class_id ) ) {
+				// Look up to 8 weeks ahead for this class
+				$found_week = null;
+				for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
+					$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
+					$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
+					
+					// Get classes for this week
+					$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
+					
+					// Look through each day's classes
+					foreach ( $check_classes as $day_key => $day_classes ) {
+						foreach ( $day_classes as $class_item ) {
+							$class_item_id = northam_class_id( $class_item, $day_key );
+							
+							// Exact match found
+							if ( $class_item_id === $deep_link_class_id ) {
+								$found_week = $check_week;
+								break 3; // Break out of all loops
+							}
+						}
+					}
+				}
+				
+				// If no exact match, try fallback matching (name + venue + day, ignoring time)
+				if ( $found_week === null ) {
+					// Parse the class ID to extract components
+					$id_parts = explode( '-', $deep_link_class_id );
+					if ( count( $id_parts ) >= 3 ) {
+						// Look for name + venue + day match
+						for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
+							$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
+							$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
+							
+							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
+							
+							foreach ( $check_classes as $day_key => $day_classes ) {
+								$day_abbr = strtolower( date( 'D', strtotime( $day_key ) ) );
+								
+								foreach ( $day_classes as $class_item ) {
+									$name_match = strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[0] ) ) !== false;
+									$venue_match = count( $id_parts ) > 1 && strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[1] ) ) !== false;
+									$day_match = count( $id_parts ) > 2 && strpos( northam_class_id( $class_item, $day_key ), $id_parts[2] ) !== false;
+									
+									if ( $name_match && $venue_match && $day_match ) {
+										$found_week = $check_week;
+										break 3;
+									}
+								}
+							}
+						}
+					}
+					
+					// Final fallback: name + venue only
+					if ( $found_week === null && count( $id_parts ) >= 2 ) {
+						for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
+							$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
+							$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
+							
+							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
+							
+							foreach ( $check_classes as $day_key => $day_classes ) {
+								foreach ( $day_classes as $class_item ) {
+									$name_match = strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[0] ) ) !== false;
+									$venue_match = strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[1] ) ) !== false;
+									
+									if ( $name_match && $venue_match ) {
+										$found_week = $check_week;
+										break 3;
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				// Set week offset if we found the class
+				if ( $found_week !== null ) {
+					$week_offset = $found_week;
+				}
+				// If no match found, week_offset stays 0 (current week, normal calendar)
+			}
+
+			// Allow manual week override via ?week= (only if no ?e= or ?c= present)
+			if ( isset( $_GET['week'] ) && ! isset( $_GET['e'] ) && ! isset( $_GET['c'] ) ) {
 				$week_offset = absint( $_GET['week'] );
+			}
 			}
 				if ( isset( $_GET['week'] ) ) {
 					$week_offset = absint( $_GET['week'] );
@@ -520,6 +608,9 @@ $venues = get_posts( array(
 
 										// Format date for display
 										$item_date = date( 'l, j F Y', strtotime( $day['key'] ) );
+
+						// Generate stable class ID for deep links (classes only)
+						$class_id = $is_class ? northam_class_id( $item, $day['key'] ) : '';
 										?>
 										<div class="northam-calendar-event northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>"
 											 data-event-title="<?php echo esc_attr( $item_name ); ?>"
@@ -538,7 +629,8 @@ $venues = get_posts( array(
 											 data-event-button-url="<?php echo $is_class ? '' : esc_url( $event_button_url ); ?>"
 											 data-event-button-label="<?php echo $is_class ? '' : esc_attr( $event_button_label ); ?>"
 											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>"
-											 data-event-slug="<?php echo $is_class ? '' : esc_attr( $event_slug ); ?>">
+											 data-event-slug="<?php echo $is_class ? '' : esc_attr( $event_slug ); ?>"
+									 data-class-id="<?php echo $is_class ? esc_attr( $class_id ) : ''; ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
 												<p class="event-title"><?php echo esc_html( $item_name ); ?></p>
@@ -708,6 +800,9 @@ $venues = get_posts( array(
 										}
 
 										// Format date for display
+
+						// Generate stable class ID for deep links (classes only)
+						$class_id = $is_class ? northam_class_id( $item, $day['key'] ) : '';
 										$item_date = date( 'l, j F Y', strtotime( $day['key'] ) );
 										?>
 										<div class="mobile-event-card northam-event-<?php echo esc_attr( $item_type ); ?> <?php echo $is_class ? 'is-regular-class' : ''; ?>"
@@ -727,7 +822,8 @@ $venues = get_posts( array(
 											 data-event-button-url="<?php echo $is_class ? '' : esc_url( $event_button_url ); ?>"
 											 data-event-button-label="<?php echo $is_class ? '' : esc_attr( $event_button_label ); ?>"
 											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>"
-											 data-event-slug="<?php echo $is_class ? '' : esc_attr( $event_slug ); ?>">
+											 data-event-slug="<?php echo $is_class ? '' : esc_attr( $event_slug ); ?>"
+									 data-class-id="<?php echo $is_class ? esc_attr( $class_id ) : ''; ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
 												<p class="mobile-event-title">
