@@ -52,6 +52,8 @@
 		function openModal(eventData) {
 			const style = typeStyles[eventData.type] || typeStyles.community;
 			const isEvent = !eventData.frequency && !eventData.contact && !eventData.phone;
+			const isClass = !isEvent;
+			const classId = eventData.classId || '';
 
 			// Update badge
 			const badge = modal.querySelector('.event-type-badge');
@@ -164,13 +166,16 @@
 				existingBookingButton.style.display = 'none';
 			}
 			
-			// Handle share button for events (not classes)
+			// Handle share button for both events and classes
 			let existingShareButton = modal.querySelector('.northam-event-share-btn');
-			
-			if (isEvent && eventData.slug) {
-				const shareUrl = `${window.location.origin}/events-calendar/?e=${eventData.slug}`;
-				const shareTitle = eventData.title || 'Event';
-				
+
+			// Show share button if we have either an event slug or a class ID
+			if ((isEvent && eventData.slug) || (isClass && classId)) {
+				const shareParam = isEvent ? `e=${eventData.slug}` : `c=${classId}`;
+				const shareUrl = `${window.location.origin}/events-calendar/?${shareParam}`;
+				const shareTitle = eventData.title || (isEvent ? 'Event' : 'Class');
+				const itemType = isEvent ? 'event' : 'class';
+
 				// Create or update share button
 				if (!existingShareButton) {
 					existingShareButton = document.createElement('button');
@@ -178,9 +183,9 @@
 					existingShareButton.textContent = 'Share';
 					modal.querySelector('.event-modal-description-section').appendChild(existingShareButton);
 				}
-				
+
 				existingShareButton.style.display = 'inline-block';
-				
+
 				// Share button click handler
 				existingShareButton.onclick = function() {
 					// Try native share API first
@@ -201,11 +206,12 @@
 							}, 2000);
 						});
 					}
-					
-					// Analytics: track share
+
+					// Analytics: track share with item type
 					if (typeof window.gtag === 'function') {
 						window.gtag('event', 'event_share', {
-							event_title: shareTitle
+							event_title: shareTitle,
+							item_type: itemType
 						});
 					}
 				};
@@ -245,10 +251,17 @@
 
 			modal.classList.add('modal-open');
 
-			// Update URL with event slug for shareable deep links (EM events only)
+			// Update URL with event slug or class ID for shareable deep links
+			// Opening a class sets ?c=, opening an event sets ?e= — never both
 			if (isEvent && eventData.slug && eventData.slug.length > 0) {
 				const url = new URL(window.location);
 				url.searchParams.set('e', eventData.slug);
+				url.searchParams.delete('c'); // Remove ?c= if present
+				window.history.replaceState({}, '', url);
+			} else if (isClass && classId.length > 0) {
+				const url = new URL(window.location);
+				url.searchParams.set('c', classId);
+				url.searchParams.delete('e'); // Remove ?e= if present
 				window.history.replaceState({}, '', url);
 			}
 
@@ -270,10 +283,11 @@
 				document.body.style.overflow = '';
 			}, 300);
 
-			// Remove ?e= from URL
+			// Remove ?e= and ?c= from URL
 			const url = new URL(window.location);
-			if (url.searchParams.has('e')) {
+			if (url.searchParams.has('e') || url.searchParams.has('c')) {
 				url.searchParams.delete('e');
+				url.searchParams.delete('c');
 				window.history.replaceState({}, '', url);
 			}
 		}
@@ -307,7 +321,8 @@
 						buttonUrl: dataElement.dataset.eventButtonUrl || '',
 						buttonLabel: dataElement.dataset.eventButtonLabel || '',
 						buttonHide: dataElement.dataset.eventButtonHide || '',
-						slug: dataElement.dataset.eventSlug || ''
+						slug: dataElement.dataset.eventSlug || '',
+						classId: dataElement.dataset.classId || ''
 					};
 				} else {
 					// Fallback: extract from DOM
@@ -422,13 +437,15 @@
 	// Auto-open modal if ?e= parameter matches a visible event slug
 	const urlParams = new URLSearchParams(window.location.search);
 	const deepLinkSlug = urlParams.get('e');
+	const deepLinkClassId = urlParams.get('c');
+
 	if (deepLinkSlug) {
 		// Find all matching event cards by slug
 		const allMatchingCards = document.querySelectorAll(
 			`.northam-calendar-event[data-event-slug="${deepLinkSlug}"], ` +
 			`.mobile-event-card[data-event-slug="${deepLinkSlug}"]`
 		);
-		
+
 		// Find the VISIBLE card (offsetParent !== null means it's visible)
 		let visibleCard = null;
 		allMatchingCards.forEach(card => {
@@ -436,8 +453,33 @@
 				visibleCard = card;
 			}
 		});
-		
-		
+
+
+		if (visibleCard) {
+			// Trigger the click event to open the modal
+			visibleCard.click();
+		}
+		// If no match found, just show the calendar normally (no error)
+	} else if (deepLinkClassId) {
+		// Get the resolved class ID from the calendar grid (for fallback matching)
+		const calendarGrid = document.querySelector('.northam-calendar-grid');
+		const resolvedId = calendarGrid ? calendarGrid.dataset.resolvedClassId : '';
+		const targetId = resolvedId || deepLinkClassId;
+
+		// Find all matching class cards by ID
+		const allMatchingCards = document.querySelectorAll(
+			`.northam-calendar-event[data-class-id="${targetId}"], ` +
+			`.mobile-event-card[data-class-id="${targetId}"]`
+		);
+
+		// Find the VISIBLE card (offsetParent !== null means it's visible)
+		let visibleCard = null;
+		allMatchingCards.forEach(card => {
+			if (card.offsetParent !== null && !visibleCard) {
+				visibleCard = card;
+			}
+		});
+
 		if (visibleCard) {
 			// Trigger the click event to open the modal
 			visibleCard.click();

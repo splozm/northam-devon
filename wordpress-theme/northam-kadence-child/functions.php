@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.2.2' );
+define( 'NORTHAM_VERSION', '1.3.0' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -2295,8 +2295,10 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
             }
 
             foreach ( $classes_data[ $day_name ] as $class ) {
+                $class_name = isset( $class['name'] ) ? $class['name'] : 'unknown';
                 // Check frequency to determine if class occurs this week
-                if ( ! northam_class_occurs_on_date( $class, $date_info ) ) {
+                $occurs = northam_class_occurs_on_date( $class, $date_info );
+                if ( ! $occurs ) {
                     continue;
                 }
 
@@ -2464,60 +2466,195 @@ function northam_event_deep_link_social_meta() {
 }
 add_action( 'wp', 'northam_event_deep_link_social_meta', 1 );
 
-// Rank Math filters for event deep links - correct network-scoped names
+// Rank Math filters for event deep links and class deep links - correct network-scoped names
 add_filter( 'rank_math/opengraph/facebook/og_title', function( $title ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['title'] : $title;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) {
+        return $northam_deep_link_event['title'];
+    }
+    if ( ! empty( $northam_deep_link_class ) ) {
+        return $northam_deep_link_class['title'];
+    }
+    return $title;
 }, 99 );
 
 add_filter( 'rank_math/opengraph/twitter/twitter_title', function( $title ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['title'] : $title;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) return $northam_deep_link_event['title'];
+    if ( ! empty( $northam_deep_link_class ) ) return $northam_deep_link_class['title'];
+    return $title;
 }, 99 );
 
 add_filter( 'rank_math/opengraph/facebook/og_description', function( $description ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['excerpt'] : $description;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) return $northam_deep_link_event['excerpt'];
+    if ( ! empty( $northam_deep_link_class ) ) return $northam_deep_link_class['excerpt'];
+    return $description;
 }, 99 );
 
 add_filter( 'rank_math/opengraph/twitter/twitter_description', function( $description ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['excerpt'] : $description;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) return $northam_deep_link_event['excerpt'];
+    if ( ! empty( $northam_deep_link_class ) ) return $northam_deep_link_class['excerpt'];
+    return $description;
 }, 99 );
 
 add_filter( 'rank_math/opengraph/facebook/og_image', function( $image ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) && ! empty( $northam_deep_link_event['image'] ) ? $northam_deep_link_event['image'] : $image;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) && ! empty( $northam_deep_link_event['image'] ) ) return $northam_deep_link_event['image'];
+    if ( ! empty( $northam_deep_link_class ) && ! empty( $northam_deep_link_class['image'] ) ) return $northam_deep_link_class['image'];
+    return $image;
 }, 99 );
 
 add_filter( 'rank_math/opengraph/twitter/twitter_image', function( $image ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) && ! empty( $northam_deep_link_event['image'] ) ? $northam_deep_link_event['image'] : $image;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) && ! empty( $northam_deep_link_event['image'] ) ) return $northam_deep_link_event['image'];
+    if ( ! empty( $northam_deep_link_class ) && ! empty( $northam_deep_link_class['image'] ) ) return $northam_deep_link_class['image'];
+    return $image;
 }, 99 );
 
 add_filter( 'rank_math/frontend/title', function( $title ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['title'] . ' - Northam Devon' : $title;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) return $northam_deep_link_event['title'] . ' - Northam Devon';
+    if ( ! empty( $northam_deep_link_class ) ) return $northam_deep_link_class['title'] . ' - Northam Devon';
+    return $title;
 }, 99 );
 
 add_filter( 'rank_math/frontend/description', function( $description ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['excerpt'] : $description;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) return $northam_deep_link_event['excerpt'];
+    if ( ! empty( $northam_deep_link_class ) ) return $northam_deep_link_class['excerpt'];
+    return $description;
 }, 99 );
 
 add_filter( 'rank_math/opengraph/url', function( $url ) {
-    global $northam_deep_link_event;
-    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['url'] : $url;
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) ) return $northam_deep_link_event['url'];
+    if ( ! empty( $northam_deep_link_class ) ) return $northam_deep_link_class['url'];
+    return $url;
 }, 99 );
 
-// Use Rank Math's robots filter to set noindex for event deep links
+// Use Rank Math's robots filter to set noindex for event and class deep links
 add_filter( 'rank_math/frontend/robots', function( $robots ) {
-    global $northam_deep_link_event;
-    if ( ! empty( $northam_deep_link_event ) ) {
+    global $northam_deep_link_event, $northam_deep_link_class;
+    if ( ! empty( $northam_deep_link_event ) || ! empty( $northam_deep_link_class ) ) {
         $robots['index'] = 'noindex';
     }
     return $robots;
 }, 99 );
+
+/**
+ * =============================================================================
+ * CLASS DEEP LINK SOCIAL META (?c=)
+ * =============================================================================
+ */
+
+/**
+ * Populate class data for ?c= deep links
+ * This runs early so Rank Math filters can use the data
+ */
+function northam_class_deep_link_social_meta() {
+
+    // Only with ?c= parameter
+    if ( ! isset( $_GET['c'] ) ) {
+        return;
+    }
+
+    $class_id = sanitize_text_field( $_GET['c'] );
+
+    if ( empty( $class_id ) ) {
+        return;
+    }
+
+    // Check if the function exists
+    if ( ! function_exists( 'northam_get_regular_classes_for_week' ) ) {
+        return;
+    }
+
+    // Look up the class (up to 8 weeks ahead)
+    $current_time = current_time( 'timestamp' );
+    $found_class = null;
+    $ids_generated = array();
+
+    for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
+        $check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
+        $check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
+
+        $check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, 'all', 0 );
+        $class_count = 0;
+        foreach ( $check_classes as $day_key => $day_classes ) {
+            $class_count += count( $day_classes );
+        }
+
+        if ( $check_week < 2 ) {
+        }
+
+        foreach ( $check_classes as $day_key => $day_classes ) {
+            foreach ( $day_classes as $class_item ) {
+                $class_item_id = northam_class_id( $class_item, $day_key );
+
+                if ( count( $ids_generated ) < 5 ) {
+                    $ids_generated[] = $class_item_id;
+                }
+
+                // Match found (exact or partial)
+                $matches = ( $class_item_id === $class_id || strpos( $class_item_id, $class_id ) !== false );
+                if ( $check_week < 2 && stripos( $class_item_id, 'yoga' ) !== false ) {
+                }
+                if ( $matches ) {
+                    // Add day name to class data
+                    $class_item['day_name'] = date( 'l', strtotime( $day_key ) );
+                    $found_class = $class_item;
+                    break 3;
+                }
+            }
+        }
+    }
+
+
+    if ( ! $found_class ) {
+        return;
+    }
+
+
+    // Build title: "{Class name} – {Venue}"
+    $title = '';
+    if ( ! empty( $found_class['name'] ) && ! empty( $found_class['venue_name'] ) ) {
+        $title = $found_class['name'] . ' – ' . $found_class['venue_name'];
+    }
+
+    // Build description: "{Day}s {time} at {Venue}, Northam." plus frequency/contact text
+    $description_parts = array();
+    if ( ! empty( $found_class['day_name'] ) && ! empty( $found_class['time'] ) && ! empty( $found_class['venue_name'] ) ) {
+        $description_parts[] = $found_class['day_name'] . 's ' . $found_class['time'] . ' at ' . $found_class['venue_name'] . ', Northam.';
+    }
+    if ( ! empty( $found_class['frequency'] ) ) {
+        $description_parts[] = $found_class['frequency'];
+    }
+    if ( ! empty( $found_class['contact'] ) ) {
+        $description_parts[] = $found_class['contact'];
+    }
+    $description = implode( ' ', $description_parts );
+
+    // Get venue image
+    $image = '';
+    if ( ! empty( $found_class['venue_id'] ) ) {
+        $venue_image = get_the_post_thumbnail_url( $found_class['venue_id'], 'large' );
+        if ( $venue_image ) {
+            $image = $venue_image;
+        }
+    }
+
+    // Store class data for filters below
+    global $northam_deep_link_class;
+    $northam_deep_link_class = array(
+        'title' => $title,
+        'excerpt' => $description,
+        'image' => $image,
+        'url' => add_query_arg( 'c', $class_id, home_url( '/events-calendar/' ) ),
+    );
+}
+add_action( 'template_redirect', 'northam_class_deep_link_social_meta', 1 );
 
 /**
  * =============================================================================
@@ -2557,25 +2694,34 @@ function northam_class_id( $item, $day_key ) {
     $name = isset( $item['name'] ) ? $item['name'] : '';
     $venue = isset( $item['venue_name'] ) ? $item['venue_name'] : '';
     $time_str = isset( $item['time'] ) ? $item['time'] : '';
+
+    static $log_count = 0;
+    if ( $log_count < 10 || stripos( $name, 'yoga' ) !== false ) {
+        $log_count++;
+    }
     
     // Extract day of week from date key (e.g. "2026-11-23" -> "mon")
     $timestamp = strtotime( $day_key );
     $day_abbr = strtolower( date( 'D', $timestamp ) ); // mon, tue, wed, etc.
     
-    // Extract start time in HHMM format from time string (e.g. "9:30 am - 10:30 am" -> "0930")
+    // Extract start time in HHMM format from time string
+    // Handles both "9:30 am - 10:30 am" and "9:30 - 10:30" (24-hour) formats
     $time_hhmm = '';
-    if ( preg_match( '/(\d{1,2}):(\d{2})\s*(am|pm)/i', $time_str, $matches ) ) {
+    if ( preg_match( '/(\d{1,2}):(\d{2})\s*(am|pm)?/i', $time_str, $matches ) ) {
         $hour = intval( $matches[1] );
         $minute = $matches[2];
-        $meridiem = strtolower( $matches[3] );
-        
-        // Convert to 24-hour format
-        if ( $meridiem === 'pm' && $hour !== 12 ) {
-            $hour += 12;
-        } elseif ( $meridiem === 'am' && $hour === 12 ) {
-            $hour = 0;
+        $meridiem = isset( $matches[3] ) ? strtolower( $matches[3] ) : '';
+
+        // Convert to 24-hour format if am/pm is present
+        if ( ! empty( $meridiem ) ) {
+            if ( $meridiem === 'pm' && $hour !== 12 ) {
+                $hour += 12;
+            } elseif ( $meridiem === 'am' && $hour === 12 ) {
+                $hour = 0;
+            }
         }
-        
+        // If no am/pm, assume it's already 24-hour format
+
         $time_hhmm = sprintf( '%02d%02d', $hour, $minute );
     }
     
@@ -2586,6 +2732,11 @@ function northam_class_id( $item, $day_key ) {
         $day_abbr,
         $time_hhmm,
     );
-    
-    return implode( '-', array_filter( $parts ) );
+
+    $result = implode( '-', array_filter( $parts ) );
+
+    if ( $log_count <= 3 || stripos( $name, 'yoga' ) !== false ) {
+    }
+
+    return $result;
 }

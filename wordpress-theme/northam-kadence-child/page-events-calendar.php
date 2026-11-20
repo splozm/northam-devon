@@ -206,31 +206,33 @@ $venues = get_posts( array(
 
 			// Deep link: if ?c= is present, find that class and calculate its week
 			$deep_link_class_id = isset( $_GET['c'] ) ? sanitize_text_field( $_GET['c'] ) : '';
-			
+			$resolved_class_id = ''; // Will hold the actual ID of the matched class
+
 			if ( ! empty( $deep_link_class_id ) ) {
 				// Look up to 8 weeks ahead for this class
 				$found_week = null;
 				for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
 					$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
 					$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
-					
+
 					// Get classes for this week
 					$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
-					
+
 					// Look through each day's classes
 					foreach ( $check_classes as $day_key => $day_classes ) {
 						foreach ( $day_classes as $class_item ) {
 							$class_item_id = northam_class_id( $class_item, $day_key );
-							
+
 							// Exact match found
 							if ( $class_item_id === $deep_link_class_id ) {
 								$found_week = $check_week;
+								$resolved_class_id = $class_item_id;
 								break 3; // Break out of all loops
 							}
 						}
 					}
 				}
-				
+
 				// If no exact match, try fallback matching (name + venue + day, ignoring time)
 				if ( $found_week === null ) {
 					// Parse the class ID to extract components
@@ -240,41 +242,45 @@ $venues = get_posts( array(
 						for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
 							$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
 							$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
-							
+
 							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
-							
+
 							foreach ( $check_classes as $day_key => $day_classes ) {
 								$day_abbr = strtolower( date( 'D', strtotime( $day_key ) ) );
-								
+
 								foreach ( $day_classes as $class_item ) {
-									$name_match = strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[0] ) ) !== false;
-									$venue_match = count( $id_parts ) > 1 && strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[1] ) ) !== false;
-									$day_match = count( $id_parts ) > 2 && strpos( northam_class_id( $class_item, $day_key ), $id_parts[2] ) !== false;
-									
+									$class_item_id = northam_class_id( $class_item, $day_key );
+									$name_match = strpos( strtolower( $class_item_id ), strtolower( $id_parts[0] ) ) !== false;
+									$venue_match = count( $id_parts ) > 1 && strpos( strtolower( $class_item_id ), strtolower( $id_parts[1] ) ) !== false;
+									$day_match = count( $id_parts ) > 2 && strpos( $class_item_id, $id_parts[2] ) !== false;
+
 									if ( $name_match && $venue_match && $day_match ) {
 										$found_week = $check_week;
+										$resolved_class_id = $class_item_id;
 										break 3;
 									}
 								}
 							}
 						}
 					}
-					
+
 					// Final fallback: name + venue only
 					if ( $found_week === null && count( $id_parts ) >= 2 ) {
 						for ( $check_week = 0; $check_week <= 7; $check_week++ ) {
 							$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
 							$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
-							
+
 							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
-							
+
 							foreach ( $check_classes as $day_key => $day_classes ) {
 								foreach ( $day_classes as $class_item ) {
-									$name_match = strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[0] ) ) !== false;
-									$venue_match = strpos( strtolower( northam_class_id( $class_item, $day_key ) ), strtolower( $id_parts[1] ) ) !== false;
-									
+									$class_item_id = northam_class_id( $class_item, $day_key );
+									$name_match = strpos( strtolower( $class_item_id ), strtolower( $id_parts[0] ) ) !== false;
+									$venue_match = strpos( strtolower( $class_item_id ), strtolower( $id_parts[1] ) ) !== false;
+
 									if ( $name_match && $venue_match ) {
 										$found_week = $check_week;
+										$resolved_class_id = $class_item_id;
 										break 3;
 									}
 								}
@@ -282,9 +288,38 @@ $venues = get_posts( array(
 						}
 					}
 				}
-				
+
 				// Set week offset if we found the class
 				if ( $found_week !== null ) {
+					// Check if the class day/time has already passed this week
+					// If so, show the next occurrence instead
+					$class_week_start = strtotime( 'monday this week', $current_time ) + ( $found_week * 7 * 24 * 60 * 60 );
+
+					// Get the matched class's day and time
+					$check_classes = northam_get_regular_classes_for_week( $class_week_start, $class_week_start + ( 7 * 24 * 60 * 60 ), $current_category, $current_venue );
+					foreach ( $check_classes as $day_key => $day_classes ) {
+						foreach ( $day_classes as $class_item ) {
+							if ( northam_class_id( $class_item, $day_key ) === $resolved_class_id ) {
+								// Found the class - parse its time
+								$class_timestamp = strtotime( $day_key );
+
+								// Extract start time from "9:30 - 10:30" format
+								$time_str = isset( $class_item['time'] ) ? $class_item['time'] : '';
+								if ( preg_match( '/(\d{1,2}):(\d{2})/', $time_str, $matches ) ) {
+									$hour = intval( $matches[1] );
+									$minute = intval( $matches[2] );
+									$class_timestamp = strtotime( $day_key . ' ' . $hour . ':' . $minute );
+								}
+
+								// If this class time has already passed, show next week instead
+								if ( $class_timestamp < $current_time ) {
+									$found_week++;
+								}
+								break 2;
+							}
+						}
+					}
+
 					$week_offset = $found_week;
 				}
 				// If no match found, week_offset stays 0 (current week, normal calendar)
@@ -294,12 +329,8 @@ $venues = get_posts( array(
 			if ( isset( $_GET['week'] ) && ! isset( $_GET['e'] ) && ! isset( $_GET['c'] ) ) {
 				$week_offset = absint( $_GET['week'] );
 			}
-			}
-				if ( isset( $_GET['week'] ) ) {
-					$week_offset = absint( $_GET['week'] );
-				}
 
-				// Calculate week start (Monday) and end (Sunday)
+			// Calculate week start (Monday) and end (Sunday)
 				$week_start = strtotime( 'monday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 );
 				$week_end = strtotime( 'sunday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
 
@@ -470,7 +501,7 @@ $venues = get_posts( array(
 				</div>
 
 				<!-- Desktop: Calendar Grid -->
-				<div class="northam-calendar-grid northam-calendar-desktop">
+				<div class="northam-calendar-grid northam-calendar-desktop" data-resolved-class-id="<?php echo esc_attr( $resolved_class_id ); ?>">
 					<!-- Day Headers -->
 					<div class="northam-calendar-day-headers">
 						<?php foreach ( $week_days as $day ) : ?>

@@ -589,5 +589,7 @@ function northam_output_json_ld( $schema ) {
 	echo '<script type="application/ld+json">';
 	echo wp_json_encode( $schema, JSON_PRETTY_PRINT );
 	echo '</script>';
-	echo "\n<!-- /Northam Schema -->\n";
+	echo "
+<!-- /Northam Schema -->
+";
 }
