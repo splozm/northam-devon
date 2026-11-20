@@ -67,8 +67,47 @@
 			modal.querySelector('.detail-time').textContent = eventData.time || '—';
 			modal.querySelector('.detail-venue').textContent = eventData.venue || '—';
 
-			// Update description
-			modal.querySelector('.event-modal-description').textContent = eventData.description || 'No description available.';
+			// Update description - build from frequency/contact/phone for classes
+			const descriptionEl = modal.querySelector('.event-modal-description');
+			descriptionEl.textContent = '';
+
+			// If this is a class with structured data, build clickable links
+			if (eventData.frequency || eventData.contact || eventData.phone) {
+				const parts = [];
+
+				// Add frequency as plain text
+				if (eventData.frequency) {
+					const freqText = document.createTextNode(eventData.frequency);
+					parts.push(freqText);
+				}
+
+				// Process contact (website or plain text)
+				if (eventData.contact) {
+					const contactPart = buildContactElement(eventData.contact);
+					parts.push(contactPart);
+				}
+
+				// Process phone (tel: link)
+				if (eventData.phone) {
+					const phonePart = buildPhoneElement(eventData.phone);
+					parts.push(phonePart);
+				}
+
+				// Join with bullet separator
+				parts.forEach((part, index) => {
+					if (index > 0) {
+						descriptionEl.appendChild(document.createTextNode(' • '));
+					}
+					if (typeof part === 'string') {
+						descriptionEl.appendChild(document.createTextNode(part));
+					} else {
+						descriptionEl.appendChild(part);
+					}
+				});
+			} else {
+				// Fall back to plain description for EM events
+				descriptionEl.textContent = eventData.description || 'No description available.';
+			}
 
 			// Update map link - use stored URL if available, otherwise generate search URL
 			const mapLink = modal.querySelector('.detail-venue-link');
@@ -139,6 +178,9 @@
 						venue: dataElement.dataset.eventVenue || '',
 						type: dataElement.dataset.eventType || 'community',
 						description: dataElement.dataset.eventDescription || '',
+						frequency: dataElement.dataset.eventFrequency || '',
+						contact: dataElement.dataset.eventContact || '',
+						phone: dataElement.dataset.eventPhone || '',
 						mapUrl: dataElement.dataset.eventMapUrl || ''
 					};
 				} else {
@@ -180,6 +222,69 @@
 			modalContent.addEventListener('click', function(e) {
 				e.stopPropagation();
 			});
+		}
+
+		/**
+		 * Build a contact element (link or plain text)
+		 * @param {string} contact - Contact string (URL, domain, or other text)
+		 * @returns {Node} - Text node or anchor element
+		 */
+		function buildContactElement(contact) {
+			if (!contact) return document.createTextNode('');
+
+			// Check if it's a URL or domain
+			const urlPattern = /^(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,})/i;
+			const isUrl = urlPattern.test(contact);
+
+			if (isUrl) {
+				// Build a proper URL
+				let fullUrl = contact;
+				if (!fullUrl.startsWith('http')) {
+					fullUrl = 'https://' + fullUrl;
+				}
+
+				// Clean display text: remove protocol, www, trailing slash
+				let displayText = contact
+					.replace(/^https?:\/\//, '')
+					.replace(/^www\./, '')
+					.replace(/\/$/, '');
+
+				const link = document.createElement('a');
+				link.href = fullUrl;
+				link.textContent = displayText;
+				link.target = '_blank';
+				link.rel = 'noopener noreferrer';
+				return link;
+			}
+
+			// Not a URL - return as plain text
+			return document.createTextNode(contact);
+		}
+
+		/**
+		 * Build a phone element (tel: link)
+		 * @param {string} phone - Phone number
+		 * @returns {Node} - Anchor element or text node
+		 */
+		function buildPhoneElement(phone) {
+			if (!phone) return document.createTextNode('');
+
+			// Check if it looks like a phone number
+			const phonePattern = /[\d\s\-+()]{7,}/;
+			const isPhone = phonePattern.test(phone);
+
+			if (isPhone) {
+				// Clean phone for tel: link (remove spaces, dashes, brackets)
+				const cleanPhone = phone.replace(/[\s\-()]/g, '');
+
+				const link = document.createElement('a');
+				link.href = 'tel:' + cleanPhone;
+				link.textContent = phone; // Keep original formatting for display
+				return link;
+			}
+
+			// Not a phone number - return as plain text
+			return document.createTextNode(phone);
 		}
 	});
 })();

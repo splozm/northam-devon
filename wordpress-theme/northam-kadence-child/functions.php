@@ -1917,6 +1917,31 @@ function northam_convert_to_24hr( $time ) {
 }
 
 /**
+ * Convert time string to minutes from midnight for numerical sorting
+ *
+ * @param string $time Time in HH:MM format (e.g., "9:30", "19:00", "6:30")
+ * @return int Minutes from midnight (e.g., 570 for 9:30, 1140 for 19:00)
+ */
+function northam_time_to_minutes( $time ) {
+    if ( empty( $time ) ) {
+        return 0;
+    }
+
+    // Handle times with colons or periods
+    $time = str_replace( '.', ':', $time );
+
+    // Parse HH:MM format
+    if ( preg_match( '/^(\d{1,2}):(\d{2})/', $time, $matches ) ) {
+        $hours = (int) $matches[1];
+        $minutes = (int) $matches[2];
+        return ( $hours * 60 ) + $minutes;
+    }
+
+    // Fallback: return 0 if can't parse
+    return 0;
+}
+
+/**
  * Guess the category of a class based on its name
  * Uses keyword matching to auto-categorize classes
  *
@@ -2277,6 +2302,7 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
                     'time'       => $class['time'],
                     'frequency'  => $class['frequency'],
                     'contact'    => isset( $class['contact'] ) ? $class['contact'] : '',
+                    'phone'      => isset( $class['phone'] ) ? $class['phone'] : '',
                     'category'   => $class_category,
                     'venue_id'   => $venue->ID,
                     'venue_name' => $venue->post_title,
@@ -2310,11 +2336,33 @@ function northam_class_occurs_on_date( $class, $date_info ) {
         return true;
     }
 
-    // Check for "of month" patterns (e.g., "1st of month" = 1st Monday/Tuesday/etc of month)
-    $is_of_month = strpos( $frequency, 'of month' ) !== false;
+    // Check for "week of the month" patterns (e.g., "1st week of the month")
+    $is_week_of_month = ( strpos( $frequency, 'week of' ) !== false || strpos( $frequency, 'week of the month' ) !== false );
 
-    if ( $is_of_month ) {
-        // These are specific weekday occurrences, not week-of-month
+    if ( $is_week_of_month ) {
+        // These patterns refer to the week number (1-5), not the weekday occurrence
+        if ( strpos( $frequency, '1st' ) !== false ) {
+            return ( $week === 1 );
+        }
+        if ( strpos( $frequency, '2nd' ) !== false ) {
+            return ( $week === 2 );
+        }
+        if ( strpos( $frequency, '3rd' ) !== false ) {
+            return ( $week === 3 );
+        }
+        if ( strpos( $frequency, '4th' ) !== false ) {
+            return ( $week === 4 );
+        }
+        if ( strpos( $frequency, 'last' ) !== false ) {
+            return $is_last;
+        }
+    }
+
+    // Check for specific weekday occurrences (e.g., "1st Friday of month", "last Saturday of the month")
+    $is_of_month = strpos( $frequency, 'of month' ) !== false || strpos( $frequency, 'of the month' ) !== false;
+
+    if ( $is_of_month && ! $is_week_of_month ) {
+        // These are specific weekday occurrences (1st Friday, 2nd Monday, etc.)
         if ( strpos( $frequency, '1st' ) !== false ) {
             return ( $occurrence === 1 );
         }

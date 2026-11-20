@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: Events Calendar
+ * Template Name: What's On in Northam
  * Description: Week-based calendar view for events (matches React implementation)
  */
 
@@ -41,7 +41,7 @@ $venues = get_posts( array(
 				</svg>
 				What's On
 			</div>
-			<h1>Events Calendar</h1>
+			<h1>What's On in Northam</h1>
 			<p>Discover what's happening in Northam — from community gatherings to live entertainment</p>
 		</div>
 	</div>
@@ -263,12 +263,18 @@ $venues = get_posts( array(
 						}
 					}
 
-					// Sort each day's items by start time
+					// Sort each day's items by start time (numerically, not alphabetically)
 					foreach ( $events_by_day as $day_key => &$day_items ) {
 						usort( $day_items, function( $a, $b ) {
+							// Extract time strings
 							$time_a = isset( $a['start_time'] ) ? $a['start_time'] : ( isset( $a['time'] ) ? explode( ' - ', $a['time'] )[0] : '00:00' );
 							$time_b = isset( $b['start_time'] ) ? $b['start_time'] : ( isset( $b['time'] ) ? explode( ' - ', $b['time'] )[0] : '00:00' );
-							return strcmp( $time_a, $time_b );
+
+							// Convert to minutes for numerical comparison
+							$minutes_a = northam_time_to_minutes( trim( $time_a ) );
+							$minutes_b = northam_time_to_minutes( trim( $time_b ) );
+
+							return $minutes_a - $minutes_b;
 						});
 					}
 					unset( $day_items );
@@ -374,7 +380,11 @@ $venues = get_posts( array(
 											$item_type = isset( $cat_to_type[ $class_cat ] ) ? $cat_to_type[ $class_cat ] : 'community';
 											$venue_name = isset( $item['venue_name'] ) ? $item['venue_name'] : '';
 											$venue_url = isset( $item['venue_url'] ) ? $item['venue_url'] : '';
-											$item_description = $item['frequency'] . ( ! empty( $item['contact'] ) ? ' • ' . $item['contact'] : '' );
+											// Pass contact details separately for JS to build links
+											$item_description = ''; // Built in JS
+											$item_frequency = isset( $item['frequency'] ) ? $item['frequency'] : '';
+											$item_contact = isset( $item['contact'] ) ? $item['contact'] : '';
+											$item_phone = isset( $item['phone'] ) ? $item['phone'] : '';
 											// Get map URL from the venue
 											if ( isset( $item['venue_id'] ) ) {
 												$item_map_url = get_post_meta( $item['venue_id'], '_northam_map_url', true );
@@ -443,6 +453,9 @@ $venues = get_posts( array(
 											 data-event-venue="<?php echo esc_attr( $venue_name ); ?>"
 											 data-event-type="<?php echo esc_attr( $item_type ); ?>"
 											 data-event-description="<?php echo esc_attr( $item_description ); ?>"
+											 data-event-frequency="<?php echo $is_class ? esc_attr( $item_frequency ) : ''; ?>"
+											 data-event-contact="<?php echo $is_class ? esc_attr( $item_contact ) : ''; ?>"
+											 data-event-phone="<?php echo $is_class ? esc_attr( $item_phone ) : ''; ?>"
 											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
@@ -520,7 +533,11 @@ $venues = get_posts( array(
 											$item_type = isset( $cat_to_type[ $class_cat ] ) ? $cat_to_type[ $class_cat ] : 'community';
 											$location_name = $item['venue_name'];
 											$location_url = $item['venue_url'];
-											$description = $item['frequency'] . ( ! empty( $item['contact'] ) ? ' • ' . $item['contact'] : '' );
+											// Pass contact details separately for JS to build links
+											$description = ''; // Built in JS
+											$item_frequency = isset( $item['frequency'] ) ? $item['frequency'] : '';
+											$item_contact = isset( $item['contact'] ) ? $item['contact'] : '';
+											$item_phone = isset( $item['phone'] ) ? $item['phone'] : '';
 											// Get map URL from the venue
 											if ( isset( $item['venue_id'] ) ) {
 												$item_map_url = get_post_meta( $item['venue_id'], '_northam_map_url', true );
@@ -590,6 +607,9 @@ $venues = get_posts( array(
 											 data-event-venue="<?php echo esc_attr( $location_name ); ?>"
 											 data-event-type="<?php echo esc_attr( $item_type ); ?>"
 											 data-event-description="<?php echo esc_attr( $description ); ?>"
+											 data-event-frequency="<?php echo $is_class ? esc_attr( $item_frequency ) : ''; ?>"
+											 data-event-contact="<?php echo $is_class ? esc_attr( $item_contact ) : ''; ?>"
+											 data-event-phone="<?php echo $is_class ? esc_attr( $item_phone ) : ''; ?>"
 											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
