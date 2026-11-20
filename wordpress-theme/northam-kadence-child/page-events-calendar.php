@@ -462,6 +462,11 @@ $venues = get_posts( array(
 
 											// Get full event content, sanitized
 											$event_full_content = wp_kses_post( $em_event->post_content );
+
+											// Get button customization fields
+											$event_button_url = get_post_meta( $em_event->post_id, '_northam_event_button_url', true );
+											$event_button_label = get_post_meta( $em_event->post_id, '_northam_event_button_label', true );
+											$event_button_hide = get_post_meta( $em_event->post_id, '_northam_event_button_hide', true );
 										}
 
 										// Format date for display
@@ -480,7 +485,10 @@ $venues = get_posts( array(
 											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>"
 											 data-event-image="<?php echo $is_class ? '' : esc_url( $event_image_url ); ?>"
 											 data-event-url="<?php echo $is_class ? '' : esc_url( $event_permalink ); ?>"
-											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>">
+											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>"
+											 data-event-button-url="<?php echo $is_class ? '' : esc_url( $event_button_url ); ?>"
+											 data-event-button-label="<?php echo $is_class ? '' : esc_attr( $event_button_label ); ?>"
+											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
 												<p class="event-title"><?php echo esc_html( $item_name ); ?></p>
@@ -640,6 +648,11 @@ $venues = get_posts( array(
 
 											// Get full event content, sanitized
 											$event_full_content = wp_kses_post( $em_event->post_content );
+
+											// Get button customization fields
+											$event_button_url = get_post_meta( $em_event->post_id, '_northam_event_button_url', true );
+											$event_button_label = get_post_meta( $em_event->post_id, '_northam_event_button_label', true );
+											$event_button_hide = get_post_meta( $em_event->post_id, '_northam_event_button_hide', true );
 										}
 
 										// Format date for display
@@ -658,7 +671,10 @@ $venues = get_posts( array(
 											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>"
 											 data-event-image="<?php echo $is_class ? '' : esc_url( $event_image_url ); ?>"
 											 data-event-url="<?php echo $is_class ? '' : esc_url( $event_permalink ); ?>"
-											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>">
+											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>"
+											 data-event-button-url="<?php echo $is_class ? '' : esc_url( $event_button_url ); ?>"
+											 data-event-button-label="<?php echo $is_class ? '' : esc_attr( $event_button_label ); ?>"
+											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
 												<p class="mobile-event-title">

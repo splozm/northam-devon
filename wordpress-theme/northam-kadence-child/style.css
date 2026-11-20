@@ -5254,13 +5254,20 @@ span[class*="dashicons"],
 	padding: 0.875rem 1.5rem;
 	margin-top: 1rem;
 	background: var(--northam-primary);
-	color: white;
+	color: #fff;
 	font-weight: 600;
 	font-size: 0.9375rem;
 	border-radius: var(--northam-radius-md);
 	text-decoration: none;
 	transition: all 0.2s ease;
 	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.northam-event-booking-btn:hover,
+.northam-event-booking-btn:focus,
+.northam-event-booking-btn:visited {
+	color: #fff;
+	text-decoration: none;
 }
 
 .northam-event-booking-btn:hover {

@@ -895,6 +895,9 @@ function northam_event_meta_box_callback( $post ) {
     wp_nonce_field( 'northam_event_meta', 'northam_event_nonce' );
 
     $map_url = get_post_meta( $post->ID, '_northam_event_map_url', true );
+    $button_url = get_post_meta( $post->ID, '_northam_event_button_url', true );
+    $button_label = get_post_meta( $post->ID, '_northam_event_button_label', true );
+    $button_hide = get_post_meta( $post->ID, '_northam_event_button_hide', true );
     ?>
     <p>
         <label for="northam_event_map_url"><strong><?php esc_html_e( 'Google Maps URL', 'northam' ); ?></strong></label>
@@ -903,6 +906,34 @@ function northam_event_meta_box_callback( $post ) {
                class="widefat"
                placeholder="https://maps.google.com/..." />
         <span class="description"><?php esc_html_e( 'Paste a Google Maps link for the event location.', 'northam' ); ?></span>
+    </p>
+
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+
+    <p>
+        <label for="northam_event_button_url"><strong><?php esc_html_e( 'Modal Button Link', 'northam' ); ?></strong></label>
+        <input type="url" id="northam_event_button_url" name="northam_event_button_url"
+               value="<?php echo esc_url( $button_url ); ?>"
+               class="widefat"
+               placeholder="https://..." />
+        <span class="description"><?php esc_html_e( 'Custom booking/ticket link. If blank, button links to this event page.', 'northam' ); ?></span>
+    </p>
+
+    <p>
+        <label for="northam_event_button_label"><strong><?php esc_html_e( 'Modal Button Label', 'northam' ); ?></strong></label>
+        <input type="text" id="northam_event_button_label" name="northam_event_button_label"
+               value="<?php echo esc_attr( $button_label ); ?>"
+               class="widefat"
+               placeholder="Book now →" />
+        <span class="description"><?php esc_html_e( 'Button text. Defaults: "Book now →" (custom link) or "Full details →" (event page).', 'northam' ); ?></span>
+    </p>
+
+    <p>
+        <label>
+            <input type="checkbox" id="northam_event_button_hide" name="northam_event_button_hide" value="1"
+                   <?php checked( $button_hide, '1' ); ?> />
+            <strong><?php esc_html_e( 'Hide modal button entirely', 'northam' ); ?></strong>
+        </label>
     </p>
     <?php
 }
@@ -1001,11 +1032,32 @@ function northam_event_venue_meta_box_callback( $post ) {
  * Save event meta
  */
 function northam_save_event_meta( $post_id ) {
-    // Save map URL
+    // Save map URL and button fields
     if ( isset( $_POST['northam_event_nonce'] ) && wp_verify_nonce( $_POST['northam_event_nonce'], 'northam_event_meta' ) ) {
         if ( ! defined( 'DOING_AUTOSAVE' ) && current_user_can( 'edit_post', $post_id ) ) {
             if ( isset( $_POST['northam_event_map_url'] ) ) {
                 update_post_meta( $post_id, '_northam_event_map_url', esc_url_raw( $_POST['northam_event_map_url'] ) );
+            }
+
+            // Save button URL
+            if ( isset( $_POST['northam_event_button_url'] ) ) {
+                update_post_meta( $post_id, '_northam_event_button_url', esc_url_raw( $_POST['northam_event_button_url'] ) );
+            } else {
+                delete_post_meta( $post_id, '_northam_event_button_url' );
+            }
+
+            // Save button label
+            if ( isset( $_POST['northam_event_button_label'] ) ) {
+                update_post_meta( $post_id, '_northam_event_button_label', sanitize_text_field( $_POST['northam_event_button_label'] ) );
+            } else {
+                delete_post_meta( $post_id, '_northam_event_button_label' );
+            }
+
+            // Save button hide checkbox
+            if ( isset( $_POST['northam_event_button_hide'] ) && $_POST['northam_event_button_hide'] === '1' ) {
+                update_post_meta( $post_id, '_northam_event_button_hide', '1' );
+            } else {
+                delete_post_meta( $post_id, '_northam_event_button_hide' );
             }
         }
     }

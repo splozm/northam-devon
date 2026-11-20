@@ -137,17 +137,37 @@
 
 			// Handle booking button for events (not classes)
 			let existingButton = modal.querySelector('.northam-event-booking-btn');
-			if (isEvent && eventData.url && eventData.url.length > 0) {
+
+			// Check if button should be hidden (hide checkbox was ticked)
+			const hideButton = isEvent && eventData.buttonHide === '1';
+
+			if (isEvent && !hideButton) {
+				// Determine button URL and target
+				const hasCustomUrl = eventData.buttonUrl && eventData.buttonUrl.length > 0;
+				const buttonUrl = hasCustomUrl ? eventData.buttonUrl : eventData.url;
+				const buttonTarget = hasCustomUrl ? '_blank' : '_self';
+				const buttonRel = hasCustomUrl ? 'noopener noreferrer' : '';
+
+				// Determine button label
+				let buttonLabel = eventData.buttonLabel && eventData.buttonLabel.length > 0
+					? eventData.buttonLabel
+					: (hasCustomUrl ? 'Book now →' : 'Full details →');
+
 				// Create or update booking button
 				if (!existingButton) {
 					existingButton = document.createElement('a');
 					existingButton.className = 'northam-event-booking-btn';
-					existingButton.target = '_blank';
-					existingButton.rel = 'noopener noreferrer';
-					existingButton.innerHTML = 'Full details & booking →';
 					modal.querySelector('.event-modal-description-section').appendChild(existingButton);
 				}
-				existingButton.href = eventData.url;
+
+				existingButton.href = buttonUrl;
+				existingButton.target = buttonTarget;
+				if (buttonRel) {
+					existingButton.rel = buttonRel;
+				} else {
+					existingButton.removeAttribute('rel');
+				}
+				existingButton.textContent = buttonLabel;
 				existingButton.style.display = 'inline-block';
 			} else if (existingButton) {
 				existingButton.style.display = 'none';
@@ -228,7 +248,10 @@
 						mapUrl: dataElement.dataset.eventMapUrl || '',
 						image: dataElement.dataset.eventImage || '',
 						url: dataElement.dataset.eventUrl || '',
-						contentHtml: dataElement.dataset.eventContentHtml || ''
+						contentHtml: dataElement.dataset.eventContentHtml || '',
+						buttonUrl: dataElement.dataset.eventButtonUrl || '',
+						buttonLabel: dataElement.dataset.eventButtonLabel || '',
+						buttonHide: dataElement.dataset.eventButtonHide || ''
 					};
 				} else {
 					// Fallback: extract from DOM
