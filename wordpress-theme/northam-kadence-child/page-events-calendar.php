@@ -161,9 +161,55 @@ $venues = get_posts( array(
 			<?php
 			// Query events based on filter
 			if ( class_exists( 'EM_Events' ) ) {
-				// Week-based pagination
-				$week_offset = isset( $_GET['week'] ) ? absint( $_GET['week'] ) : 0;
 				$current_time = current_time( 'timestamp' );
+
+			// Deep link: if ?e= is present, find that event and calculate its week
+			$deep_link_slug = isset( $_GET['e'] ) ? sanitize_title( $_GET['e'] ) : '';
+			$week_offset = 0;
+
+			if ( ! empty( $deep_link_slug ) ) {
+				
+				// Find event by slug
+				$deep_link_event = get_page_by_path( $deep_link_slug, OBJECT, 'event' );
+				
+				if ( $deep_link_event && $deep_link_event->post_status === 'publish' ) {
+					// Get all future events that match this event's name/slug
+					// This handles both recurring and non-recurring events
+					$all_future = EM_Events::get( array(
+						'scope' => 'future',
+						'limit' => 999,
+						'orderby' => 'event_start',
+						'order' => 'ASC',
+					) );
+					
+					
+					// Find the next occurrence with matching slug
+					$next_event = null;
+					foreach ( $all_future as $em_event ) {
+						$event_post = get_post( $em_event->post_id );
+						if ( $event_post && $event_post->post_name === $deep_link_slug ) {
+							$next_event = $em_event;
+							break;
+						}
+					}
+					
+					// Use the next occurrence's date to calculate week
+					if ( $next_event ) {
+						$this_monday = strtotime( 'monday this week', $current_time );
+						$event_monday = strtotime( 'monday this week', $next_event->start );
+						$week_offset = max( 0, floor( ( $event_monday - $this_monday ) / ( 7 * 24 * 60 * 60 ) ) );
+					} else {
+					}
+				}
+			}
+
+			// Allow manual week override via ?week= (only if no ?e= present)
+			if ( isset( $_GET['week'] ) && ! isset( $_GET['e'] ) ) {
+				$week_offset = absint( $_GET['week'] );
+			}
+				if ( isset( $_GET['week'] ) ) {
+					$week_offset = absint( $_GET['week'] );
+				}
 
 				// Calculate week start (Monday) and end (Sunday)
 				$week_start = strtotime( 'monday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 );
@@ -368,6 +414,7 @@ $venues = get_posts( array(
 										$event_image_url = '';
 										$event_permalink = '';
 										$event_full_content = '';
+										$event_slug = '';
 
 										if ( $is_class ) {
 											// Map class category to display type
@@ -457,8 +504,10 @@ $venues = get_posts( array(
 												}
 											}
 
-											// Get event permalink
+											// Get event permalink and slug
 											$event_permalink = get_permalink( $em_event->post_id );
+											$event_post = get_post( $em_event->post_id );
+											$event_slug = $event_post ? $event_post->post_name : '';
 
 											// Get full event content, sanitized
 											$event_full_content = wp_kses_post( $em_event->post_content );
@@ -488,7 +537,8 @@ $venues = get_posts( array(
 											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>"
 											 data-event-button-url="<?php echo $is_class ? '' : esc_url( $event_button_url ); ?>"
 											 data-event-button-label="<?php echo $is_class ? '' : esc_attr( $event_button_label ); ?>"
-											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>">
+											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>"
+											 data-event-slug="<?php echo $is_class ? '' : esc_attr( $event_slug ); ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
 												<p class="event-title"><?php echo esc_html( $item_name ); ?></p>
@@ -643,8 +693,10 @@ $venues = get_posts( array(
 												}
 											}
 
-											// Get event permalink
+											// Get event permalink and slug
 											$event_permalink = get_permalink( $em_event->post_id );
+											$event_post = get_post( $em_event->post_id );
+											$event_slug = $event_post ? $event_post->post_name : '';
 
 											// Get full event content, sanitized
 											$event_full_content = wp_kses_post( $em_event->post_content );
@@ -674,7 +726,8 @@ $venues = get_posts( array(
 											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>"
 											 data-event-button-url="<?php echo $is_class ? '' : esc_url( $event_button_url ); ?>"
 											 data-event-button-label="<?php echo $is_class ? '' : esc_attr( $event_button_label ); ?>"
-											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>">
+											 data-event-button-hide="<?php echo $is_class ? '' : esc_attr( $event_button_hide ); ?>"
+											 data-event-slug="<?php echo $is_class ? '' : esc_attr( $event_slug ); ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
 												<p class="mobile-event-title">

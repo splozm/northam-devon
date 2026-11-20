@@ -5276,6 +5276,33 @@ span[class*="dashicons"],
 	transform: translateY(-1px);
 }
 
+/* Share button for events - outline version */
+.northam-event-share-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.875rem 1.5rem;
+	margin-top: 1rem;
+	margin-left: 0.75rem;
+	background: transparent;
+	color: var(--northam-primary);
+	font-weight: 600;
+	font-size: 0.9375rem;
+	border: 2px solid var(--northam-primary);
+	border-radius: var(--northam-radius-md);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.northam-event-share-btn:hover,
+.northam-event-share-btn:focus {
+	background: var(--northam-primary);
+	color: #fff;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
 /* Desktop styling */
 @media (min-width: 768px) {
 	.modal-content {

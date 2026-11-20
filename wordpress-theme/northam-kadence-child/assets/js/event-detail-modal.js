@@ -135,42 +135,82 @@
 				descriptionEl.textContent = eventData.description || 'No description available.';
 			}
 
-			// Handle booking button for events (not classes)
-			let existingButton = modal.querySelector('.northam-event-booking-btn');
-
-			// Check if button should be hidden (hide checkbox was ticked)
+			// Handle booking button for events (not classes) - only show if custom URL is set
+			let existingBookingButton = modal.querySelector('.northam-event-booking-btn');
+			
+			// Only show booking button if hide is NOT checked AND custom URL exists
+			const hasCustomUrl = isEvent && eventData.buttonUrl && eventData.buttonUrl.length > 0;
 			const hideButton = isEvent && eventData.buttonHide === '1';
-
-			if (isEvent && !hideButton) {
-				// Determine button URL and target
-				const hasCustomUrl = eventData.buttonUrl && eventData.buttonUrl.length > 0;
-				const buttonUrl = hasCustomUrl ? eventData.buttonUrl : eventData.url;
-				const buttonTarget = hasCustomUrl ? '_blank' : '_self';
-				const buttonRel = hasCustomUrl ? 'noopener noreferrer' : '';
-
+			
+			if (hasCustomUrl && !hideButton) {
 				// Determine button label
-				let buttonLabel = eventData.buttonLabel && eventData.buttonLabel.length > 0
-					? eventData.buttonLabel
-					: (hasCustomUrl ? 'Book now →' : 'Full details →');
-
+				let buttonLabel = eventData.buttonLabel && eventData.buttonLabel.length > 0 
+					? eventData.buttonLabel 
+					: 'Book now →';
+				
 				// Create or update booking button
-				if (!existingButton) {
-					existingButton = document.createElement('a');
-					existingButton.className = 'northam-event-booking-btn';
-					modal.querySelector('.event-modal-description-section').appendChild(existingButton);
+				if (!existingBookingButton) {
+					existingBookingButton = document.createElement('a');
+					existingBookingButton.className = 'northam-event-booking-btn';
+					modal.querySelector('.event-modal-description-section').appendChild(existingBookingButton);
 				}
-
-				existingButton.href = buttonUrl;
-				existingButton.target = buttonTarget;
-				if (buttonRel) {
-					existingButton.rel = buttonRel;
-				} else {
-					existingButton.removeAttribute('rel');
+				
+				existingBookingButton.href = eventData.buttonUrl;
+				existingBookingButton.target = '_blank';
+				existingBookingButton.rel = 'noopener noreferrer';
+				existingBookingButton.textContent = buttonLabel;
+				existingBookingButton.style.display = 'inline-block';
+			} else if (existingBookingButton) {
+				existingBookingButton.style.display = 'none';
+			}
+			
+			// Handle share button for events (not classes)
+			let existingShareButton = modal.querySelector('.northam-event-share-btn');
+			
+			if (isEvent && eventData.slug) {
+				const shareUrl = `${window.location.origin}/events-calendar/?e=${eventData.slug}`;
+				const shareTitle = eventData.title || 'Event';
+				
+				// Create or update share button
+				if (!existingShareButton) {
+					existingShareButton = document.createElement('button');
+					existingShareButton.className = 'northam-event-share-btn';
+					existingShareButton.textContent = 'Share';
+					modal.querySelector('.event-modal-description-section').appendChild(existingShareButton);
 				}
-				existingButton.textContent = buttonLabel;
-				existingButton.style.display = 'inline-block';
-			} else if (existingButton) {
-				existingButton.style.display = 'none';
+				
+				existingShareButton.style.display = 'inline-block';
+				
+				// Share button click handler
+				existingShareButton.onclick = function() {
+					// Try native share API first
+					if (navigator.share) {
+						navigator.share({
+							title: shareTitle,
+							url: shareUrl
+						}).catch(() => {
+							// User cancelled, do nothing
+						});
+					} else {
+						// Fallback: copy to clipboard
+						navigator.clipboard.writeText(shareUrl).then(() => {
+							const originalText = existingShareButton.textContent;
+							existingShareButton.textContent = 'Link copied ✓';
+							setTimeout(() => {
+								existingShareButton.textContent = originalText;
+							}, 2000);
+						});
+					}
+					
+					// Analytics: track share
+					if (typeof window.gtag === 'function') {
+						window.gtag('event', 'event_share', {
+							event_title: shareTitle
+						});
+					}
+				};
+			} else if (existingShareButton) {
+				existingShareButton.style.display = 'none';
 			}
 
 			// Update map link - use stored URL if available, otherwise generate search URL
@@ -204,7 +244,15 @@
 			}, 10);
 
 			modal.classList.add('modal-open');
-						// Analytics: record which event/class was opened
+
+			// Update URL with event slug for shareable deep links (EM events only)
+			if (isEvent && eventData.slug && eventData.slug.length > 0) {
+				const url = new URL(window.location);
+				url.searchParams.set('e', eventData.slug);
+				window.history.replaceState({}, '', url);
+			}
+
+			// Analytics: record which event/class was opened
 			if (typeof window.gtag === 'function') {
 				window.gtag('event', 'event_open', {
 					event_title: eventData.title || '',
@@ -221,6 +269,13 @@
 				modal.classList.remove('modal-open');
 				document.body.style.overflow = '';
 			}, 300);
+
+			// Remove ?e= from URL
+			const url = new URL(window.location);
+			if (url.searchParams.has('e')) {
+				url.searchParams.delete('e');
+				window.history.replaceState({}, '', url);
+			}
 		}
 
 		// Add click event to all event cards
@@ -251,7 +306,8 @@
 						contentHtml: dataElement.dataset.eventContentHtml || '',
 						buttonUrl: dataElement.dataset.eventButtonUrl || '',
 						buttonLabel: dataElement.dataset.eventButtonLabel || '',
-						buttonHide: dataElement.dataset.eventButtonHide || ''
+						buttonHide: dataElement.dataset.eventButtonHide || '',
+						slug: dataElement.dataset.eventSlug || ''
 					};
 				} else {
 					// Fallback: extract from DOM
@@ -362,5 +418,31 @@
 			// Not a phone number - return as plain text
 			return document.createTextNode(phone);
 		}
+
+	// Auto-open modal if ?e= parameter matches a visible event slug
+	const urlParams = new URLSearchParams(window.location.search);
+	const deepLinkSlug = urlParams.get('e');
+	if (deepLinkSlug) {
+		// Find all matching event cards by slug
+		const allMatchingCards = document.querySelectorAll(
+			`.northam-calendar-event[data-event-slug="${deepLinkSlug}"], ` +
+			`.mobile-event-card[data-event-slug="${deepLinkSlug}"]`
+		);
+		
+		// Find the VISIBLE card (offsetParent !== null means it's visible)
+		let visibleCard = null;
+		allMatchingCards.forEach(card => {
+			if (card.offsetParent !== null && !visibleCard) {
+				visibleCard = card;
+			}
+		});
+		
+		
+		if (visibleCard) {
+			// Trigger the click event to open the modal
+			visibleCard.click();
+		}
+		// If no match found, just show the calendar normally (no error)
+	}
 	});
 })();

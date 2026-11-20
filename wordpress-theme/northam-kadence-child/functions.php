@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.1.0' );
+define( 'NORTHAM_VERSION', '1.2.2' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -1122,6 +1122,21 @@ function northam_redirect_events_to_calendar() {
     }
 }
 add_action( 'template_redirect', 'northam_redirect_events_to_calendar' );
+
+/**
+ * Redirect single event pages to calendar deep link
+ */
+function northam_redirect_single_events_to_calendar() {
+    if ( is_singular( 'event' ) ) {
+        global $post;
+        if ( $post ) {
+            $calendar_url = add_query_arg( 'e', $post->post_name, home_url( '/events-calendar/' ) );
+            wp_redirect( $calendar_url, 301 );
+            exit;
+        }
+    }
+}
+add_action( 'template_redirect', 'northam_redirect_single_events_to_calendar' );
 
 /**
  * Redirect archive-only business pages to external website or archive
@@ -2406,6 +2421,103 @@ function northam_class_occurs_on_date( $class, $date_info ) {
     // Default to occurring
     return true;
 }
+
+/**
+ * =============================================================================
+ * SOCIAL PREVIEWS FOR EVENT DEEP LINKS (Rank Math)
+ * =============================================================================
+ */
+
+/**
+ * Customize social meta tags for event deep links
+ */
+function northam_event_deep_link_social_meta() {
+    // Only on events calendar page with ?event= parameter
+    if ( ! is_page_template( 'page-events-calendar.php' ) && ! is_page( 'events-calendar' ) ) {
+        return;
+    }
+
+    $event_slug = isset( $_GET['e'] ) ? sanitize_title( $_GET['e'] ) : '';
+    if ( empty( $event_slug ) ) {
+        return;
+    }
+
+    // Find event by slug
+    $event_post = get_page_by_path( $event_slug, OBJECT, 'event' );
+    if ( ! $event_post || $event_post->post_status !== 'publish' ) {
+        return;
+    }
+
+    $em_event = em_get_event( $event_post->ID, 'post_id' );
+    if ( ! $em_event ) {
+        return;
+    }
+
+    // Store event data for filters below
+    global $northam_deep_link_event;
+    $northam_deep_link_event = array(
+        'title' => $em_event->event_name,
+        'excerpt' => wp_trim_words( $em_event->post_content, 25, '...' ),
+        'image' => get_the_post_thumbnail_url( $event_post->ID, 'large' ),
+        'url' => add_query_arg( 'e', $event_slug, home_url( '/events-calendar/' ) ),
+    );
+}
+add_action( 'wp', 'northam_event_deep_link_social_meta', 1 );
+
+// Rank Math filters for event deep links - correct network-scoped names
+add_filter( 'rank_math/opengraph/facebook/og_title', function( $title ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['title'] : $title;
+}, 99 );
+
+add_filter( 'rank_math/opengraph/twitter/twitter_title', function( $title ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['title'] : $title;
+}, 99 );
+
+add_filter( 'rank_math/opengraph/facebook/og_description', function( $description ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['excerpt'] : $description;
+}, 99 );
+
+add_filter( 'rank_math/opengraph/twitter/twitter_description', function( $description ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['excerpt'] : $description;
+}, 99 );
+
+add_filter( 'rank_math/opengraph/facebook/og_image', function( $image ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) && ! empty( $northam_deep_link_event['image'] ) ? $northam_deep_link_event['image'] : $image;
+}, 99 );
+
+add_filter( 'rank_math/opengraph/twitter/twitter_image', function( $image ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) && ! empty( $northam_deep_link_event['image'] ) ? $northam_deep_link_event['image'] : $image;
+}, 99 );
+
+add_filter( 'rank_math/frontend/title', function( $title ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['title'] . ' - Northam Devon' : $title;
+}, 99 );
+
+add_filter( 'rank_math/frontend/description', function( $description ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['excerpt'] : $description;
+}, 99 );
+
+add_filter( 'rank_math/opengraph/url', function( $url ) {
+    global $northam_deep_link_event;
+    return ! empty( $northam_deep_link_event ) ? $northam_deep_link_event['url'] : $url;
+}, 99 );
+
+// Use Rank Math's robots filter to set noindex for event deep links
+add_filter( 'rank_math/frontend/robots', function( $robots ) {
+    global $northam_deep_link_event;
+    if ( ! empty( $northam_deep_link_event ) ) {
+        $robots['index'] = 'noindex';
+    }
+    return $robots;
+}, 99 );
 
 /**
  * =============================================================================
