@@ -51,6 +51,7 @@
 		// Open modal with event data
 		function openModal(eventData) {
 			const style = typeStyles[eventData.type] || typeStyles.community;
+			const isEvent = !eventData.frequency && !eventData.contact && !eventData.phone;
 
 			// Update badge
 			const badge = modal.querySelector('.event-type-badge');
@@ -67,10 +68,26 @@
 			modal.querySelector('.detail-time').textContent = eventData.time || '—';
 			modal.querySelector('.detail-venue').textContent = eventData.venue || '—';
 
+			// Handle featured image for events (not classes)
+			let existingImage = modal.querySelector('.northam-event-modal-image');
+			if (isEvent && eventData.image && eventData.image.length > 0) {
+				// Create or update image
+				if (!existingImage) {
+					existingImage = document.createElement('img');
+					existingImage.className = 'northam-event-modal-image';
+					modal.querySelector('.modal-body').insertBefore(existingImage, modal.querySelector('.event-type-badge'));
+				}
+				existingImage.src = eventData.image;
+				existingImage.alt = eventData.title || 'Event image';
+				existingImage.style.display = 'block';
+			} else if (existingImage) {
+				existingImage.style.display = 'none';
+			}
+
 			// Update description - build from frequency/contact/phone for classes
 			const descriptionEl = modal.querySelector('.event-modal-description');
 			descriptionEl.textContent = '';
-			
+
 			// If this is a class with structured data, build clickable links
 			if (eventData.frequency || eventData.contact || eventData.phone) {
 				const parts = [];
@@ -104,9 +121,36 @@
 						descriptionEl.appendChild(part);
 					}
 				});
+			} else if (eventData.contentHtml && eventData.contentHtml.length > 0) {
+				// For Events Manager events: use full HTML content
+				descriptionEl.innerHTML = eventData.contentHtml;
+				// Make all links open in new tab
+				const links = descriptionEl.querySelectorAll('a');
+				links.forEach(link => {
+					link.setAttribute('target', '_blank');
+					link.setAttribute('rel', 'noopener noreferrer');
+				});
 			} else {
-				// Fall back to plain description for EM events
+				// Fallback to trimmed description
 				descriptionEl.textContent = eventData.description || 'No description available.';
+			}
+
+			// Handle booking button for events (not classes)
+			let existingButton = modal.querySelector('.northam-event-booking-btn');
+			if (isEvent && eventData.url && eventData.url.length > 0) {
+				// Create or update booking button
+				if (!existingButton) {
+					existingButton = document.createElement('a');
+					existingButton.className = 'northam-event-booking-btn';
+					existingButton.target = '_blank';
+					existingButton.rel = 'noopener noreferrer';
+					existingButton.innerHTML = 'Full details & booking →';
+					modal.querySelector('.event-modal-description-section').appendChild(existingButton);
+				}
+				existingButton.href = eventData.url;
+				existingButton.style.display = 'inline-block';
+			} else if (existingButton) {
+				existingButton.style.display = 'none';
 			}
 
 			// Update map link - use stored URL if available, otherwise generate search URL
@@ -181,7 +225,10 @@
 						frequency: dataElement.dataset.eventFrequency || '',
 						contact: dataElement.dataset.eventContact || '',
 						phone: dataElement.dataset.eventPhone || '',
-						mapUrl: dataElement.dataset.eventMapUrl || ''
+						mapUrl: dataElement.dataset.eventMapUrl || '',
+						image: dataElement.dataset.eventImage || '',
+						url: dataElement.dataset.eventUrl || '',
+						contentHtml: dataElement.dataset.eventContentHtml || ''
 					};
 				} else {
 					// Fallback: extract from DOM

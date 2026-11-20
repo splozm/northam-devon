@@ -5038,34 +5038,53 @@ span[class*="dashicons"],
 	display: flex;
 	flex-direction: column;
 	gap: 1.5rem;
+	overflow-y: auto;
+	max-height: calc(85vh - 2rem);
+}
+
+/* Featured image banner for events */
+.northam-event-modal-image {
+	width: calc(100% + 3rem);
+	max-width: none;
+	margin: -2rem -1.5rem 1.5rem;
+	max-height: 240px;
+	object-fit: cover;
+	object-position: center;
+	border-radius: 1rem 1rem 0 0;
+	display: block;
 }
 
 /* Close button */
-.modal-close {
+.northam-event-modal .modal-close {
 	position: absolute;
 	top: 1rem;
 	right: 1rem;
 	width: 2rem;
 	height: 2rem;
+	padding: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: transparent;
+	background: rgba(255, 255, 255, 0.9);
 	border: none;
 	cursor: pointer;
-	border-radius: var(--northam-radius-md);
-	transition: background-color 0.2s ease;
+	border-radius: 50%;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+	transition: all 0.2s ease;
 	z-index: 10;
 }
 
-.modal-close:hover {
-	background-color: var(--northam-muted);
+.northam-event-modal .modal-close:hover {
+	background: rgba(255, 255, 255, 1);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	transform: scale(1.05);
 }
 
-.modal-close svg {
-	width: 1.25rem;
-	height: 1.25rem;
-	color: var(--northam-muted-foreground);
+.northam-event-modal .modal-close svg {
+	width: 16px;
+	height: 16px;
+	color: hsl(200, 30%, 25%);
+	stroke-width: 2.5;
 }
 
 /* Event type badge */
@@ -5204,6 +5223,52 @@ span[class*="dashicons"],
 	color: var(--northam-foreground);
 }
 
+/* Make description content links stand out */
+.event-modal-description a {
+	color: var(--northam-primary);
+	text-decoration: underline;
+	text-decoration-color: hsla(175, 65%, 40%, 0.3);
+	text-underline-offset: 2px;
+	transition: text-decoration-color 0.2s ease;
+}
+
+.event-modal-description a:hover {
+	text-decoration-color: var(--northam-primary);
+}
+
+/* Preserve paragraph spacing in full content */
+.event-modal-description p {
+	margin-bottom: 1em;
+}
+
+.event-modal-description p:last-child {
+	margin-bottom: 0;
+}
+
+/* Booking button for events */
+.northam-event-booking-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.875rem 1.5rem;
+	margin-top: 1rem;
+	background: var(--northam-primary);
+	color: white;
+	font-weight: 600;
+	font-size: 0.9375rem;
+	border-radius: var(--northam-radius-md);
+	text-decoration: none;
+	transition: all 0.2s ease;
+	box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.northam-event-booking-btn:hover {
+	background: hsl(175, 65%, 35%);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	transform: translateY(-1px);
+}
+
 /* Desktop styling */
 @media (min-width: 768px) {
 	.modal-content {
@@ -5217,15 +5282,25 @@ span[class*="dashicons"],
 		gap: 2rem;
 	}
 
+	.northam-event-modal-image {
+		width: calc(100% + 4rem);
+		margin: -2.5rem -2rem 1.5rem;
+	}
+
 	.event-modal-title {
 		font-size: 2.25rem;
 	}
 
-	.modal-close {
+	.northam-event-modal .modal-close {
 		top: 1.5rem;
 		right: 1.5rem;
 		width: 2.5rem;
 		height: 2.5rem;
+	}
+
+	.northam-event-modal .modal-close svg {
+		width: 18px;
+		height: 18px;
 	}
 
 	.modal-close svg {

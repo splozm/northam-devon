@@ -365,6 +365,9 @@ $venues = get_posts( array(
 										// Initialize venue info
 										$venue_name = '';
 										$venue_url = '';
+										$event_image_url = '';
+										$event_permalink = '';
+										$event_full_content = '';
 
 										if ( $is_class ) {
 											// Map class category to display type
@@ -441,6 +444,24 @@ $venues = get_posts( array(
 											}
 
 											$item_description = wp_trim_words( $em_event->post_content, 20 );
+
+											// Get featured image for modal (large or medium_large size)
+											if ( has_post_thumbnail( $em_event->post_id ) ) {
+												$image_id = get_post_thumbnail_id( $em_event->post_id );
+												$image_data = wp_get_attachment_image_src( $image_id, 'large' );
+												if ( ! $image_data ) {
+													$image_data = wp_get_attachment_image_src( $image_id, 'medium_large' );
+												}
+												if ( $image_data ) {
+													$event_image_url = $image_data[0];
+												}
+											}
+
+											// Get event permalink
+											$event_permalink = get_permalink( $em_event->post_id );
+
+											// Get full event content, sanitized
+											$event_full_content = wp_kses_post( $em_event->post_content );
 										}
 
 										// Format date for display
@@ -456,7 +477,10 @@ $venues = get_posts( array(
 											 data-event-frequency="<?php echo $is_class ? esc_attr( $item_frequency ) : ''; ?>"
 											 data-event-contact="<?php echo $is_class ? esc_attr( $item_contact ) : ''; ?>"
 											 data-event-phone="<?php echo $is_class ? esc_attr( $item_phone ) : ''; ?>"
-											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>">
+											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>"
+											 data-event-image="<?php echo $is_class ? '' : esc_url( $event_image_url ); ?>"
+											 data-event-url="<?php echo $is_class ? '' : esc_url( $event_permalink ); ?>"
+											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>">
 											<span class="event-dot"></span>
 											<div class="event-content">
 												<p class="event-title"><?php echo esc_html( $item_name ); ?></p>
@@ -518,6 +542,9 @@ $venues = get_posts( array(
 										$item_name = $item['name'];
 										$item_time = $item['time'];
 										$item_map_url = '';
+										$event_image_url = '';
+										$event_permalink = '';
+										$event_full_content = '';
 
 										if ( $is_class ) {
 											// Map class category to display type
@@ -595,6 +622,24 @@ $venues = get_posts( array(
 											}
 
 											$description = wp_trim_words( $em_event->post_content, 15 );
+
+											// Get featured image for modal (large or medium_large size)
+											if ( has_post_thumbnail( $em_event->post_id ) ) {
+												$image_id = get_post_thumbnail_id( $em_event->post_id );
+												$image_data = wp_get_attachment_image_src( $image_id, 'large' );
+												if ( ! $image_data ) {
+													$image_data = wp_get_attachment_image_src( $image_id, 'medium_large' );
+												}
+												if ( $image_data ) {
+													$event_image_url = $image_data[0];
+												}
+											}
+
+											// Get event permalink
+											$event_permalink = get_permalink( $em_event->post_id );
+
+											// Get full event content, sanitized
+											$event_full_content = wp_kses_post( $em_event->post_content );
 										}
 
 										// Format date for display
@@ -610,7 +655,10 @@ $venues = get_posts( array(
 											 data-event-frequency="<?php echo $is_class ? esc_attr( $item_frequency ) : ''; ?>"
 											 data-event-contact="<?php echo $is_class ? esc_attr( $item_contact ) : ''; ?>"
 											 data-event-phone="<?php echo $is_class ? esc_attr( $item_phone ) : ''; ?>"
-											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>">
+											 data-event-map-url="<?php echo esc_url( $item_map_url ); ?>"
+											 data-event-image="<?php echo $is_class ? '' : esc_url( $event_image_url ); ?>"
+											 data-event-url="<?php echo $is_class ? '' : esc_url( $event_permalink ); ?>"
+											 data-event-content-html="<?php echo $is_class ? '' : esc_attr( $event_full_content ); ?>">
 											<span class="mobile-event-dot"></span>
 											<div class="mobile-event-content">
 												<p class="mobile-event-title">
