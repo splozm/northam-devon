@@ -70,9 +70,9 @@
 			modal.querySelector('.detail-time').textContent = eventData.time || '—';
 			modal.querySelector('.detail-venue').textContent = eventData.venue || '—';
 
-			// Handle featured image for events (not classes)
+			// Handle featured image for events and classes
 			let existingImage = modal.querySelector('.northam-event-modal-image');
-			if (isEvent && eventData.image && eventData.image.length > 0) {
+			if (eventData.image && eventData.image.length > 0) {
 				// Create or update image
 				if (!existingImage) {
 					existingImage = document.createElement('img');

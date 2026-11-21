@@ -716,6 +716,160 @@ function northam_regular_classes_meta_box_callback( $post ) {
         });
     });
     </script>
+
+    <!-- Class Images Section -->
+    <div style="margin-top: 30px; padding: 20px; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 4px;">
+        <h3 style="margin-top: 0; margin-bottom: 15px;">Class Images</h3>
+        <p class="description" style="margin-bottom: 15px;">
+            Upload images for classes. Images are matched by contact website domain and will appear in event modals.
+            One image per unique class (e.g., "bidefordyoga.co.uk" covers all Yoga sessions).
+        </p>
+
+        <?php
+        // Load existing class images map
+        $class_images_json = get_post_meta( $post->ID, '_northam_class_images', true );
+        $class_images = $class_images_json ? json_decode( $class_images_json, true ) : array();
+
+        // Extract unique contact domains from all classes
+        $unique_contacts = array();
+        foreach ( $classes as $day => $day_classes ) {
+            foreach ( $day_classes as $class ) {
+                if ( ! empty( $class['contact'] ) ) {
+                    // Extract domain from contact (URL or plain text)
+                    $domain = $class['contact'];
+                    // Clean up: remove protocol, www, paths, trailing slash
+                    $domain = preg_replace( '/^https?:\/\/(www\.)?/', '', $domain );
+                    $domain = preg_replace( '/\/.*$/', '', $domain );
+                    $domain = rtrim( $domain, '/' );
+
+                    if ( ! empty( $domain ) && ! isset( $unique_contacts[ $domain ] ) ) {
+                        $unique_contacts[ $domain ] = $class['name'];
+                    }
+                }
+            }
+        }
+
+        // Sort by class name for easier scanning
+        asort( $unique_contacts );
+        ?>
+
+        <div id="northam-class-images-container">
+            <?php if ( ! empty( $unique_contacts ) ) : ?>
+                <table class="widefat" style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Class Name</th>
+                            <th style="width: 35%;">Contact Domain</th>
+                            <th style="width: 25%;">Image</th>
+                            <th style="width: 10%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ( $unique_contacts as $domain => $class_name ) :
+                            $image_id = isset( $class_images[ $domain ] ) ? $class_images[ $domain ] : 0;
+                            $image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'thumbnail' ) : '';
+                        ?>
+                            <tr data-domain="<?php echo esc_attr( $domain ); ?>">
+                                <td><strong><?php echo esc_html( $class_name ); ?></strong></td>
+                                <td><code style="font-size: 11px;"><?php echo esc_html( $domain ); ?></code></td>
+                                <td>
+                                    <div class="northam-class-image-preview" style="display: flex; align-items: center; gap: 10px;">
+                                        <?php if ( $image_url ) : ?>
+                                            <img src="<?php echo esc_url( $image_url ); ?>" style="max-width: 60px; height: auto; border: 1px solid #ddd;">
+                                        <?php else : ?>
+                                            <span style="color: #666; font-style: italic;">No image</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <input type="hidden"
+                                           name="northam_class_images[<?php echo esc_attr( $domain ); ?>]"
+                                           value="<?php echo esc_attr( $image_id ); ?>"
+                                           class="northam-class-image-id">
+                                </td>
+                                <td>
+                                    <button type="button" class="button northam-select-class-image">
+                                        <?php echo $image_id ? 'Change' : 'Select'; ?>
+                                    </button>
+                                    <?php if ( $image_id ) : ?>
+                                        <button type="button" class="button northam-remove-class-image" style="margin-top: 5px;">Remove</button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php else : ?>
+                <p style="color: #666; font-style: italic;">No classes with contact information found. Add classes with websites above to enable image uploads.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <script>
+    jQuery(document).ready(function($) {
+        var classImageFrame;
+
+        // Handle "Select" or "Change" button click
+        $(document).on('click', '.northam-select-class-image', function(e) {
+            e.preventDefault();
+
+            var $button = $(this);
+            var $row = $button.closest('tr');
+            var $imageInput = $row.find('.northam-class-image-id');
+            var $preview = $row.find('.northam-class-image-preview');
+
+            // Create media frame if it doesn't exist
+            if (!classImageFrame) {
+                classImageFrame = wp.media({
+                    title: 'Select Class Image',
+                    button: { text: 'Use this image' },
+                    multiple: false,
+                    library: { type: 'image' }
+                });
+
+                classImageFrame.on('select', function() {
+                    var attachment = classImageFrame.state().get('selection').first().toJSON();
+                    var imageUrl = attachment.sizes && attachment.sizes.thumbnail
+                        ? attachment.sizes.thumbnail.url
+                        : attachment.url;
+
+                    // Update hidden input
+                    $imageInput.val(attachment.id);
+
+                    // Update preview
+                    $preview.html('<img src="' + imageUrl + '" style="max-width: 60px; height: auto; border: 1px solid #ddd;">');
+
+                    // Update button text and add remove button if needed
+                    $button.text('Change');
+                    if (!$button.siblings('.northam-remove-class-image').length) {
+                        $button.after('<button type="button" class="button northam-remove-class-image" style="margin-top: 5px;">Remove</button>');
+                    }
+                });
+            }
+
+            classImageFrame.open();
+        });
+
+        // Handle "Remove" button click
+        $(document).on('click', '.northam-remove-class-image', function(e) {
+            e.preventDefault();
+
+            var $button = $(this);
+            var $row = $button.closest('tr');
+            var $imageInput = $row.find('.northam-class-image-id');
+            var $preview = $row.find('.northam-class-image-preview');
+            var $selectButton = $row.find('.northam-select-class-image');
+
+            // Clear hidden input
+            $imageInput.val('');
+
+            // Update preview
+            $preview.html('<span style="color: #666; font-style: italic;">No image</span>');
+
+            // Update button text and remove this button
+            $selectButton.text('Select');
+            $button.remove();
+        });
+    });
+    </script>
     <?php
 }
 
@@ -778,6 +932,30 @@ function northam_save_regular_classes_meta( $post_id ) {
         } else {
             delete_post_meta( $post_id, '_northam_classes_source_url' );
         }
+    }
+
+    // Save class images map (domain => attachment ID)
+    if ( isset( $_POST['northam_class_images'] ) && is_array( $_POST['northam_class_images'] ) ) {
+        $class_images = array();
+
+        foreach ( $_POST['northam_class_images'] as $domain => $image_id ) {
+            $domain = sanitize_text_field( $domain );
+            $image_id = absint( $image_id );
+
+            // Only save if image ID is valid
+            if ( $image_id > 0 ) {
+                $class_images[ $domain ] = $image_id;
+            }
+        }
+
+        if ( ! empty( $class_images ) ) {
+            update_post_meta( $post_id, '_northam_class_images', wp_json_encode( $class_images ) );
+        } else {
+            delete_post_meta( $post_id, '_northam_class_images' );
+        }
+    } else {
+        // If no class images submitted, don't delete existing ones (they're separate from class rows)
+        // This preserves images when only updating class schedule without touching images section
     }
 }
 add_action( 'save_post_northam_venue', 'northam_save_regular_classes_meta' );

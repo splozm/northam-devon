@@ -108,38 +108,37 @@ function northam_output_custom_logo() {
     ?>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Find site branding area
-        var siteBranding = document.querySelector('.site-branding');
-        if (!siteBranding) return;
+        // Find all site branding areas (desktop and mobile)
+        document.querySelectorAll('.site-branding').forEach(function(siteBranding) {
+            // Check if our custom logo already exists
+            if (siteBranding.querySelector('.northam-logo-link')) return;
 
-        // Check if our custom logo already exists
-        if (siteBranding.querySelector('.northam-logo-link')) return;
+            // Create custom logo
+            var logoHTML = `
+                <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="northam-logo-link" rel="home">
+                    <div class="northam-logo-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div class="northam-logo-text">
+                        <span class="northam-logo-title">Northam</span>
+                        <span class="northam-logo-tagline">Devon</span>
+                    </div>
+                </a>
+            `;
 
-        // Create custom logo
-        var logoHTML = `
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="northam-logo-link" rel="home">
-                <div class="northam-logo-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                </div>
-                <div class="northam-logo-text">
-                    <span class="northam-logo-title">Northam</span>
-                    <span class="northam-logo-tagline">Devon</span>
-                </div>
-            </a>
-        `;
+            // Insert logo at the beginning of site branding
+            siteBranding.insertAdjacentHTML('afterbegin', logoHTML);
 
-        // Insert logo at the beginning of site branding
-        siteBranding.insertAdjacentHTML('afterbegin', logoHTML);
+            // Hide the default site title
+            var siteTitle = siteBranding.querySelector('.site-title');
+            if (siteTitle) siteTitle.style.display = 'none';
 
-        // Hide the default site title
-        var siteTitle = siteBranding.querySelector('.site-title');
-        if (siteTitle) siteTitle.style.display = 'none';
-
-        var siteDesc = siteBranding.querySelector('.site-description');
-        if (siteDesc) siteDesc.style.display = 'none';
+            var siteDesc = siteBranding.querySelector('.site-description');
+            if (siteDesc) siteDesc.style.display = 'none';
+        });
     });
     </script>
     <?php
@@ -2285,6 +2284,10 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
             continue;
         }
 
+        // Load class images map for this venue
+        $class_images_json = get_post_meta( $venue->ID, '_northam_class_images', true );
+        $class_images = $class_images_json ? json_decode( $class_images_json, true ) : array();
+
         // Check each day in the week
         foreach ( $week_dates as $date_info ) {
             $day_name = $date_info['day_name'];
@@ -2312,6 +2315,21 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
                     continue;
                 }
 
+                // Look up image for this class based on contact domain
+                $class_image_url = '';
+                if ( ! empty( $class['contact'] ) && ! empty( $class_images ) ) {
+                    // Extract domain from contact (same logic as meta box)
+                    $domain = $class['contact'];
+                    $domain = preg_replace( '/^https?:\/\/(www\.)?/', '', $domain );
+                    $domain = preg_replace( '/\/.*$/', '', $domain );
+                    $domain = rtrim( $domain, '/' );
+
+                    if ( isset( $class_images[ $domain ] ) ) {
+                        $image_id = $class_images[ $domain ];
+                        $class_image_url = wp_get_attachment_image_url( $image_id, 'large' );
+                    }
+                }
+
                 // Add class to the day
                 $classes_by_day[ $date_info['key'] ][] = array(
                     'type'       => 'regular_class',
@@ -2324,6 +2342,7 @@ function northam_get_regular_classes_for_week( $week_start, $week_end, $category
                     'venue_id'   => $venue->ID,
                     'venue_name' => $venue->post_title,
                     'venue_url'  => get_permalink( $venue->ID ),
+                    'image'      => $class_image_url,
                 );
             }
         }
