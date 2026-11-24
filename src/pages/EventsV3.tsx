@@ -135,7 +135,6 @@ const EventsV3 = () => {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedVenue, setSelectedVenue] = useState("all");
   const [seasonalOnly, setSeasonalOnly] = useState(false);
-  const [includeClasses, setIncludeClasses] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -145,11 +144,7 @@ const EventsV3 = () => {
   );
 
   const filteredEvents = useMemo(() => {
-    const source = view === "classes"
-      ? regularClasses
-      : includeClasses
-        ? [...oneOffEvents, ...regularClasses]
-        : oneOffEvents;
+    const source = view === "classes" ? regularClasses : oneOffEvents;
 
     return source.filter((event) => {
       if (selectedType !== "all" && event.type !== selectedType) return false;
@@ -157,7 +152,7 @@ const EventsV3 = () => {
       if (view === "events" && seasonalOnly && !event.seasonal) return false;
       return true;
     });
-  }, [view, includeClasses, selectedType, selectedVenue, seasonalOnly]);
+  }, [view, selectedType, selectedVenue, seasonalOnly]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -169,7 +164,11 @@ const EventsV3 = () => {
       map.set(
         format(day, "yyyy-MM-dd"),
         filteredEvents
-          .filter((event) => isSameDay(parseISO(event.date), day))
+          .filter((event) =>
+            event.kind === "class"
+              ? format(parseISO(event.date), "EEEE") === format(day, "EEEE")
+              : isSameDay(parseISO(event.date), day)
+          )
           .sort((a, b) => a.time.localeCompare(b.time))
       );
     });
@@ -177,7 +176,6 @@ const EventsV3 = () => {
   }, [filteredEvents, weekStart.toISOString()]);
 
   const totalThisWeek = Array.from(eventsByDay.values()).reduce((total, events) => total + events.length, 0);
-  const classDays = eachDayOfInterval({ start: thisMonday, end: addDays(thisMonday, 6) });
 
   const openEvent = (event: CalendarEvent) => {
     setSelectedEvent(event);
@@ -306,33 +304,26 @@ const EventsV3 = () => {
         )}
 
         <section className="mb-5 p-4 md:p-5 rounded-2xl bg-card border border-border/70 shadow-sm">
-          {view === "events" ? (
-            <div className="flex items-center justify-between gap-2 pb-4 border-b border-border/60">
-              <Button variant="outline" size="icon" onClick={() => setCurrentDate(subWeeks(currentDate, 1))} aria-label="Previous week">
-                <ChevronLeft className="w-4 h-4" />
+          <div className="flex items-center justify-between gap-2 pb-4 border-b border-border/60">
+            <Button variant="outline" size="icon" onClick={() => setCurrentDate(subWeeks(currentDate, 1))} aria-label="Previous week">
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="text-center min-w-0">
+              <h2 className="font-heading text-xl md:text-2xl font-bold whitespace-nowrap">
+                <span className="sm:hidden">{format(weekStart, "d")} – {format(weekEnd, "d MMM yyyy")}</span>
+                <span className="hidden sm:inline">{format(weekStart, "d")} – {format(weekEnd, "d MMMM yyyy")}</span>
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {totalThisWeek} {view === "classes" ? `class${totalThisWeek !== 1 ? "es" : ""}` : `${seasonalOnly ? "Christmas " : ""}event${totalThisWeek !== 1 ? "s" : ""}`} this week
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(addWeeks(currentDate, 1))} aria-label="Next week">
+                <ChevronRight className="w-4 h-4" />
               </Button>
-              <div className="text-center min-w-0">
-                <h2 className="font-heading text-xl md:text-2xl font-bold whitespace-nowrap">
-                  <span className="sm:hidden">{format(weekStart, "d")} – {format(weekEnd, "d MMM yyyy")}</span>
-                  <span className="hidden sm:inline">{format(weekStart, "d")} – {format(weekEnd, "d MMMM yyyy")}</span>
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {totalThisWeek} {seasonalOnly ? "Christmas " : ""}event{totalThisWeek !== 1 ? "s" : ""} this week
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())}>Today</Button>
-                <Button variant="outline" size="icon" onClick={() => setCurrentDate(addWeeks(currentDate, 1))} aria-label="Next week">
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
-          ) : (
-            <div className="pb-4 border-b border-border/60">
-              <h2 className="font-heading text-2xl font-bold">Your weekly timetable</h2>
-              <p className="text-sm text-muted-foreground mt-1">Regular sessions shown once, with their usual day and time.</p>
-            </div>
-          )}
+          </div>
 
           <div className="pt-4 flex flex-col lg:flex-row lg:items-center gap-3">
             <div className="hidden md:flex flex-wrap gap-2 flex-1">
@@ -384,22 +375,9 @@ const EventsV3 = () => {
             </div>
           </div>
 
-          {view === "events" && (
-            <button
-              onClick={() => setIncludeClasses(!includeClasses)}
-              className="mt-4 inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              aria-pressed={includeClasses}
-            >
-              <span className={`w-8 h-4 rounded-full p-0.5 transition-colors ${includeClasses ? "bg-primary" : "bg-muted"}`}>
-                <span className={`block w-3 h-3 rounded-full bg-card shadow-sm transition-transform ${includeClasses ? "translate-x-4" : "translate-x-0"}`} />
-              </span>
-              Include regular classes in this calendar
-            </button>
-          )}
         </section>
 
-        {view === "events" ? (
-          <>
+        <>
             <section className="md:hidden space-y-5">
               {weekDays.filter((day) => (eventsByDay.get(format(day, "yyyy-MM-dd")) || []).length > 0).map((day) => {
                 const dayEvents = eventsByDay.get(format(day, "yyyy-MM-dd")) || [];
@@ -414,7 +392,7 @@ const EventsV3 = () => {
                   </div>
                 );
               })}
-              {totalThisWeek === 0 && <p className="text-center text-sm text-muted-foreground py-12">No events match these filters this week.</p>}
+              {totalThisWeek === 0 && <p className="text-center text-sm text-muted-foreground py-12">No {view === "classes" ? "classes" : "events"} match these filters this week.</p>}
             </section>
 
             <section className="hidden md:block rounded-2xl overflow-hidden border border-border bg-card shadow-sm">
@@ -439,39 +417,6 @@ const EventsV3 = () => {
               </div>
             </section>
           </>
-        ) : (
-          <section className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-            {classDays.map((day, index) => {
-              const dayClasses = filteredEvents.filter((event) => isSameDay(parseISO(event.date), day));
-              return (
-                <div key={day.toISOString()} className={`grid md:grid-cols-[150px_1fr] ${index > 0 ? "border-t border-border/60" : ""}`}>
-                  <div className="px-4 pt-4 md:py-5 md:bg-muted/20">
-                    <h3 className="font-heading text-xl font-bold">{format(day, "EEEE")}</h3>
-                    <p className="text-xs text-muted-foreground">{dayClasses.length} session{dayClasses.length !== 1 ? "s" : ""}</p>
-                  </div>
-                  <div className="p-4 grid sm:grid-cols-2 gap-3">
-                    {dayClasses.length > 0 ? dayClasses.map((event) => (
-                      <button key={event.id} onClick={() => openEvent(event)} className="text-left rounded-xl border border-border/70 bg-background p-4 hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${typeConfig[event.type].pill}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${typeConfig[event.type].dot}`} />
-                            {typeConfig[event.type].shortLabel}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-[10px] text-primary"><Repeat2 className="w-3 h-3" />Weekly</span>
-                        </div>
-                        <h4 className="font-body text-base font-semibold">{event.title}</h4>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{event.time}</span>
-                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{event.venue}</span>
-                        </div>
-                      </button>
-                    )) : <p className="text-sm text-muted-foreground/60 sm:col-span-2">No regular sessions</p>}
-                  </div>
-                </div>
-              );
-            })}
-          </section>
-        )}
       </main>
 
       <EventDetailDrawer event={selectedEvent} open={drawerOpen} onOpenChange={setDrawerOpen} />
