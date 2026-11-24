@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.3.0' );
+define( 'NORTHAM_VERSION', '1.3.5' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -326,16 +326,6 @@ function northam_enqueue_styles() {
         null
     );
 
-    // Header JavaScript
-    wp_enqueue_script(
-        'northam-header',
-        NORTHAM_THEME_URI . '/assets/js/header.js',
-        array(),
-        NORTHAM_VERSION,
-        true
-    );
-
-    
 }
 add_action( 'wp_enqueue_scripts', 'northam_enqueue_styles', 20 );
 
@@ -583,6 +573,52 @@ function northam_register_taxonomies() {
     ) );
 }
 add_action( 'init', 'northam_register_taxonomies' );
+
+/**
+ * =============================================================================
+ * EVENT CATEGORIES SETUP
+ * =============================================================================
+ */
+
+/**
+ * Create default event categories for Events Manager
+ * Ensures Christmas and Regular Classes categories exist
+ */
+function northam_create_event_categories() {
+    // Only run if Events Manager is active and taxonomy exists
+    if ( ! taxonomy_exists( 'event-categories' ) ) {
+        return;
+    }
+
+    // Check if Christmas category already exists
+    $christmas_term = term_exists( 'Christmas', 'event-categories' );
+
+    if ( ! $christmas_term ) {
+        wp_insert_term(
+            'Christmas',              // Term name
+            'event-categories',       // Taxonomy
+            array(
+                'description' => 'Christmas events and festive activities',
+                'slug'        => 'christmas',
+            )
+        );
+    }
+
+    // Check if Regular Classes category already exists
+    $regular_classes_term = term_exists( 'Regular Classes', 'event-categories' );
+
+    if ( ! $regular_classes_term ) {
+        wp_insert_term(
+            'Regular Classes',        // Term name
+            'event-categories',       // Taxonomy
+            array(
+                'description' => 'Regular weekly classes and activities',
+                'slug'        => 'regular-classes',
+            )
+        );
+    }
+}
+add_action( 'init', 'northam_create_event_categories', 15 ); // Priority 15 to run after Events Manager registers its taxonomy
 
 /**
  * =============================================================================

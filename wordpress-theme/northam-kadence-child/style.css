@@ -244,22 +244,40 @@ header.site-header,
   stroke: var(--northam-foreground) !important;
 }
 
-/* Mobile drawer - white background */
-.popup-drawer,
-.mobile-navigation {
-  background-color: #ffffff !important;
+/* Mobile drawer */
+#mobile-drawer .drawer-inner,
+#mobile-drawer .mobile-navigation {
+  background-color: #fff !important;
 }
 
-.mobile-navigation a,
-.popup-drawer a,
-.drawer-content a {
+#mobile-drawer .menu-toggle-close {
   color: var(--northam-foreground) !important;
 }
 
-.mobile-navigation a:hover,
-.popup-drawer a:hover,
-.drawer-content a:hover {
+#mobile-drawer .menu-item > a {
+  display: flex !important;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 48px;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem !important;
+  color: var(--northam-foreground) !important;
+  border-bottom: 1px solid var(--northam-border) !important;
+  border-radius: 0.5rem;
+}
+
+#mobile-drawer .menu-item > a::before {
+  flex-shrink: 0;
+}
+
+#mobile-drawer .menu-item > a:hover {
   background-color: var(--northam-muted) !important;
+}
+
+#mobile-drawer .current-menu-item > a {
+  background-color: var(--northam-primary) !important;
+  color: var(--northam-primary-foreground) !important;
+  border-bottom-color: transparent !important;
 }
 
 /* Sticky header */
@@ -604,6 +622,7 @@ a:focus-visible {
   color: var(--northam-primary);
   text-decoration: none;
   font-weight: 500;
+  cursor: pointer;
 }
 
 .northam-map-link-small:hover {
@@ -1354,6 +1373,7 @@ a.northam-listing-card-link:focus {
 .northam-archive-hero-content {
   position: relative;
   z-index: 10;
+  padding-bottom: 2rem;
 }
 
 .northam-archive-hero h1 {
@@ -1386,6 +1406,230 @@ a.northam-listing-card-link:focus {
   font-size: var(--northam-text-sm);
   font-weight: 500;
   margin-bottom: 1rem;
+}
+
+/* View Tabs */
+.northam-view-tabs-wrapper {
+  background: transparent;
+  padding: 0;
+  margin-top: -3rem;
+  position: relative;
+  z-index: 20;
+}
+
+.northam-view-tabs {
+  display: flex;
+  gap: 0;
+  max-width: 650px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-view-tabs {
+    background: hsl(200, 15%, 15%);
+    border-color: hsl(200, 15%, 25%);
+  }
+}
+
+.northam-view-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--northam-muted-foreground);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.northam-view-tab:hover:not(.active) {
+  background: hsl(0, 0%, 98%);
+  color: var(--northam-foreground);
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-view-tab:hover:not(.active) {
+    background: hsla(0, 0%, 100%, 0.05);
+  }
+}
+
+.northam-view-tab.active {
+  background: var(--northam-primary);
+  color: white;
+  box-shadow: 0 2px 6px rgba(69, 177, 157, 0.25);
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-view-tab.active {
+    background: var(--northam-primary);
+    color: white;
+  }
+}
+
+.northam-view-tab svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.northam-view-tab .tab-title {
+  font-weight: 600;
+  font-size: var(--northam-text-base);
+}
+
+.northam-view-tab .tab-subtitle {
+  font-size: var(--northam-text-sm);
+  color: var(--northam-muted-foreground);
+  margin-top: 0.125rem;
+}
+
+.northam-view-tab.active .tab-subtitle {
+  color: white;
+}
+
+@media (max-width: 640px) {
+  .northam-view-tab {
+    padding: 0.875rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .northam-view-tab .tab-title {
+    font-size: var(--northam-text-sm);
+  }
+
+  .northam-view-tab .tab-subtitle {
+    display: none;
+  }
+
+  .northam-view-tab svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Seasonal Section */
+.northam-seasonal-section {
+  padding: 2rem 0;
+  background: linear-gradient(to bottom, hsl(0, 0%, 99%), white);
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-seasonal-section {
+    background: linear-gradient(to bottom, hsl(200, 15%, 12%), var(--northam-background));
+  }
+}
+
+.northam-seasonal-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, hsl(15, 85%, 97%), hsl(355, 85%, 97%));
+  border: 1px solid hsl(15, 50%, 90%);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-seasonal-card {
+    background: linear-gradient(135deg, hsl(15, 40%, 15%), hsl(355, 40%, 15%));
+    border-color: hsl(15, 30%, 25%);
+  }
+}
+
+.northam-seasonal-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, hsl(355, 78%, 56%), hsl(145, 63%, 42%));
+  border-radius: 12px;
+  color: white;
+}
+
+.northam-seasonal-content {
+  flex: 1;
+}
+
+.northam-seasonal-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(355, 70%, 50%);
+  margin-bottom: 0.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-seasonal-label {
+    color: hsl(355, 60%, 60%);
+  }
+}
+
+.northam-seasonal-title {
+  font-family: var(--northam-font-heading);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 600;
+  color: var(--northam-foreground);
+  margin: 0 0 0.5rem;
+}
+
+.northam-seasonal-description {
+  font-size: var(--northam-text-sm);
+  color: var(--northam-muted-foreground);
+  margin: 0;
+}
+
+.northam-seasonal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--northam-primary);
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: var(--northam-text-sm);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.northam-seasonal-btn:hover {
+  background: var(--northam-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(69, 177, 157, 0.3);
+}
+
+.northam-seasonal-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 768px) {
+  .northam-seasonal-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+  }
+
+  .northam-seasonal-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Filters Bar */
@@ -1697,6 +1941,48 @@ a.northam-listing-card-link:focus {
   color: white;
 }
 .northam-filter-btn.northam-filter-community.active .filter-dot {
+  background: white;
+}
+
+/* Regular Classes - Teal/Indigo */
+.northam-filter-btn.northam-filter-classes {
+  background: linear-gradient(to bottom right, hsla(175, 65%, 55%, 0.15), hsla(220, 75%, 60%, 0.08));
+  border-color: hsla(175, 65%, 55%, 0.3);
+  color: hsl(195, 60%, 35%);
+}
+.northam-filter-btn.northam-filter-classes .filter-dot {
+  background: linear-gradient(to bottom right, hsl(175, 65%, 55%), hsl(220, 75%, 60%));
+}
+.northam-filter-btn.northam-filter-classes:hover {
+  border-color: hsl(175, 65%, 55%);
+}
+.northam-filter-btn.northam-filter-classes.active {
+  background: linear-gradient(to bottom right, hsl(175, 65%, 55%), hsl(220, 75%, 60%));
+  border-color: hsl(175, 65%, 55%);
+  color: white;
+}
+.northam-filter-btn.northam-filter-classes.active .filter-dot {
+  background: white;
+}
+
+/* Christmas - Festive Red/Green */
+.northam-filter-btn.northam-filter-christmas {
+  background: linear-gradient(to bottom right, hsla(355, 78%, 56%, 0.15), hsla(145, 63%, 42%, 0.08));
+  border-color: hsla(355, 78%, 56%, 0.3);
+  color: hsl(355, 65%, 35%);
+}
+.northam-filter-btn.northam-filter-christmas .filter-dot {
+  background: linear-gradient(to bottom right, hsl(355, 78%, 56%), hsl(145, 63%, 42%));
+}
+.northam-filter-btn.northam-filter-christmas:hover {
+  border-color: hsl(355, 78%, 56%);
+}
+.northam-filter-btn.northam-filter-christmas.active {
+  background: linear-gradient(to bottom right, hsl(355, 78%, 56%), hsl(145, 63%, 42%));
+  border-color: hsl(355, 78%, 56%);
+  color: white;
+}
+.northam-filter-btn.northam-filter-christmas.active .filter-dot {
   background: white;
 }
 
@@ -2538,6 +2824,16 @@ a.northam-listing-card-link:focus {
 
 .northam-event-card-small:hover {
   box-shadow: var(--northam-shadow-md);
+}
+
+/* Clickable event card link styling */
+.northam-event-card-link {
+  cursor: pointer;
+  transition: transform var(--northam-transition-fast), box-shadow var(--northam-transition-fast);
+}
+
+.northam-event-card-link:hover {
+  transform: translateY(-2px);
 }
 
 .northam-event-card-image {

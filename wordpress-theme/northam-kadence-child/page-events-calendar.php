@@ -7,9 +7,9 @@
 get_header();
 
 // Get current filters from URL
+$current_view = isset($_GET['view']) ? sanitize_text_field($_GET['view']) : 'events'; // 'events' or 'classes'
 $current_category = isset($_GET['category']) ? sanitize_text_field($_GET['category']) : 'all';
 $current_venue = isset($_GET['venue']) ? absint($_GET['venue']) : 0;
-$show_classes = isset($_GET['classes']) ? $_GET['classes'] === '1' : true; // Show classes by default
 
 // Query venues marked as "is a venue" (for dropdown filter)
 $venues = get_posts( array(
@@ -32,17 +32,67 @@ $venues = get_posts( array(
 	<div class="northam-archive-hero northam-gradient-coastal">
 		<div class="northam-archive-hero-overlay"></div>
 		<div class="northam-archive-hero-content northam-container">
-			<div class="northam-hero-badge">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-					<line x1="16" y1="2" x2="16" y2="6"></line>
-					<line x1="8" y1="2" x2="8" y2="6"></line>
-					<line x1="3" y1="10" x2="21" y2="10"></line>
-				</svg>
-				What's On
-			</div>
 			<h1>What's On in Northam</h1>
-			<p>Discover what's happening in Northam — from community gatherings to live entertainment</p>
+			<p>Special events, local happenings, and regular activities — without the clutter.</p>
+		</div>
+	</div>
+
+	<!-- View Tabs -->
+	<div class="northam-view-tabs-wrapper">
+		<div class="northam-container">
+			<div class="northam-view-tabs">
+				<?php
+				$events_url = add_query_arg( array( 'view' => 'events', 'category' => $current_category !== 'all' ? $current_category : false, 'venue' => $current_venue > 0 ? $current_venue : false ), remove_query_arg( array( 'view', 'category', 'venue', 'week' ) ) );
+				$classes_url = add_query_arg( array( 'view' => 'classes', 'category' => $current_category !== 'all' ? $current_category : false, 'venue' => $current_venue > 0 ? $current_venue : false ), remove_query_arg( array( 'view', 'category', 'venue', 'week' ) ) );
+				?>
+				<a href="<?php echo esc_url( $events_url ); ?>" class="northam-view-tab <?php echo $current_view === 'events' ? 'active' : ''; ?>">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+						<line x1="16" y1="2" x2="16" y2="6"></line>
+						<line x1="8" y1="2" x2="8" y2="6"></line>
+						<line x1="3" y1="10" x2="21" y2="10"></line>
+					</svg>
+					<div>
+						<div class="tab-title">What's On</div>
+						<div class="tab-subtitle">One-off events & special occasions</div>
+					</div>
+				</a>
+				<a href="<?php echo esc_url( $classes_url ); ?>" class="northam-view-tab <?php echo $current_view === 'classes' ? 'active' : ''; ?>">
+					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+						<path d="M21 3v5h-5"></path>
+					</svg>
+					<div>
+						<div class="tab-title">Classes & Activities</div>
+						<div class="tab-subtitle">Weekly sessions & regular meet-ups</div>
+					</div>
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Seasonal Collection -->
+	<div class="northam-seasonal-section">
+		<div class="northam-container">
+			<div class="northam-seasonal-card">
+				<div class="northam-seasonal-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+					</svg>
+				</div>
+				<div class="northam-seasonal-content">
+					<div class="northam-seasonal-label">SEASONAL</div>
+					<h2 class="northam-seasonal-title">Christmas in Northam</h2>
+					<p class="northam-seasonal-description">Festive markets, carols, crafts, and family events — gathered in one place.</p>
+				</div>
+				<a href="<?php echo esc_url( add_query_arg( array( 'view' => 'events', 'category' => 'christmas' ), remove_query_arg( array( 'view', 'category', 'venue', 'week' ) ) ) ); ?>" class="northam-seasonal-btn">
+					Explore Christmas events
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="5" y1="12" x2="19" y2="12"></line>
+						<polyline points="12 5 19 12 12 19"></polyline>
+					</svg>
+				</a>
+			</div>
 		</div>
 	</div>
 
@@ -54,6 +104,11 @@ $venues = get_posts( array(
 				// Helper to build filter URL preserving other params
 				function northam_filter_url( $category = null, $venue = null ) {
 					$params = array();
+
+					// Preserve view
+					if ( isset( $_GET['view'] ) ) {
+						$params['view'] = sanitize_text_field( $_GET['view'] );
+					}
 
 					// Set category (use current if not specified)
 					if ( $category !== null ) {
@@ -77,7 +132,7 @@ $venues = get_posts( array(
 						$params['week'] = intval( $_GET['week'] );
 					}
 
-					return add_query_arg( $params, remove_query_arg( array( 'category', 'venue', 'week' ) ) );
+					return add_query_arg( $params, remove_query_arg( array( 'view', 'category', 'venue', 'week' ) ) );
 				}
 
 				// Helper for venue-only URL changes
@@ -87,7 +142,7 @@ $venues = get_posts( array(
 
 				// Category options for both desktop and mobile
 				$categories = array(
-					'all'              => array( 'label' => 'All Events', 'class' => '' ),
+					'all'              => array( 'label' => 'All categories', 'class' => '' ),
 					'kids-family'      => array( 'label' => 'Kids & Family', 'class' => 'northam-filter-kids' ),
 					'active-outdoors'  => array( 'label' => 'Active & Outdoors', 'class' => 'northam-filter-active' ),
 					'food-drink'       => array( 'label' => 'Food & Drink', 'class' => 'northam-filter-food' ),
@@ -124,8 +179,8 @@ $venues = get_posts( array(
 				</div>
 			</div>
 
-			<?php if ( ! empty( $venues ) ) : ?>
-			<!-- Venue Filter (Mobile & Desktop) -->
+			<?php if ( ! empty( $venues ) && $current_view === 'classes' ) : ?>
+			<!-- Venue Filter (Classes View Only) -->
 			<div class="northam-venue-filter-row">
 				<div class="northam-venue-dropdown">
 					<select id="northam-venue-select" class="northam-venue-select" aria-label="Filter by venue">
@@ -148,7 +203,7 @@ $venues = get_posts( array(
 	document.getElementById('northam-category-select').addEventListener('change', function() {
 		window.location.href = this.value;
 	});
-	<?php if ( ! empty( $venues ) ) : ?>
+	<?php if ( ! empty( $venues ) && $current_view === 'classes' ) : ?>
 	document.getElementById('northam-venue-select').addEventListener('change', function() {
 		window.location.href = this.value;
 	});
@@ -208,6 +263,9 @@ $venues = get_posts( array(
 			$deep_link_class_id = isset( $_GET['c'] ) ? sanitize_text_field( $_GET['c'] ) : '';
 			$resolved_class_id = ''; // Will hold the actual ID of the matched class
 
+			// Transform category for regular classes lookup (same as main calendar logic)
+			$class_category_lookup = ( $current_category === 'regular-classes' ) ? 'all' : $current_category;
+
 			if ( ! empty( $deep_link_class_id ) ) {
 				// Look up to 8 weeks ahead for this class
 				$found_week = null;
@@ -216,7 +274,7 @@ $venues = get_posts( array(
 					$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
 
 					// Get classes for this week
-					$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
+					$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $class_category_lookup, $current_venue );
 
 					// Look through each day's classes
 					foreach ( $check_classes as $day_key => $day_classes ) {
@@ -243,7 +301,7 @@ $venues = get_posts( array(
 							$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
 							$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
 
-							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
+							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $class_category_lookup, $current_venue );
 
 							foreach ( $check_classes as $day_key => $day_classes ) {
 								$day_abbr = strtolower( date( 'D', strtotime( $day_key ) ) );
@@ -270,7 +328,7 @@ $venues = get_posts( array(
 							$check_start = strtotime( 'monday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 );
 							$check_end = strtotime( 'sunday this week', $current_time ) + ( $check_week * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
 
-							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $current_category, $current_venue );
+							$check_classes = northam_get_regular_classes_for_week( $check_start, $check_end, $class_category_lookup, $current_venue );
 
 							foreach ( $check_classes as $day_key => $day_classes ) {
 								foreach ( $day_classes as $class_item ) {
@@ -296,7 +354,7 @@ $venues = get_posts( array(
 					$class_week_start = strtotime( 'monday this week', $current_time ) + ( $found_week * 7 * 24 * 60 * 60 );
 
 					// Get the matched class's day and time
-					$check_classes = northam_get_regular_classes_for_week( $class_week_start, $class_week_start + ( 7 * 24 * 60 * 60 ), $current_category, $current_venue );
+					$check_classes = northam_get_regular_classes_for_week( $class_week_start, $class_week_start + ( 7 * 24 * 60 * 60 ), $class_category_lookup, $current_venue );
 					foreach ( $check_classes as $day_key => $day_classes ) {
 						foreach ( $day_classes as $class_item ) {
 							if ( northam_class_id( $class_item, $day_key ) === $resolved_class_id ) {
@@ -334,31 +392,36 @@ $venues = get_posts( array(
 				$week_start = strtotime( 'monday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 );
 				$week_end = strtotime( 'sunday this week', $current_time ) + ( $week_offset * 7 * 24 * 60 * 60 ) + ( 24 * 60 * 60 ) - 1;
 
-				// Get all future events
-				$query_args = array(
-					'scope'   => 'future',
-					'limit'   => 999,
-					'orderby' => 'event_start',
-					'order'   => 'ASC',
-				);
+				// If "Classes" view is selected, skip EM events entirely
+				if ( $current_view === 'classes' ) {
+					$all_events = array();
+				} else {
+					// Get all future events (for "What's On" view)
+					$query_args = array(
+						'scope'   => 'future',
+						'limit'   => 999,
+						'orderby' => 'event_start',
+						'order'   => 'ASC',
+					);
 
-				$all_events = EM_Events::get( $query_args );
+					$all_events = EM_Events::get( $query_args );
 
-				// Filter events by category if not "all"
-				if ( $current_category !== 'all' ) {
-					$filtered_events = array();
-					foreach ( $all_events as $em_event ) {
-						$categories = get_the_terms( $em_event->post_id, 'event-categories' );
-						if ( $categories && ! is_wp_error( $categories ) ) {
-							foreach ( $categories as $cat ) {
-								if ( $cat->slug === $current_category ) {
-									$filtered_events[] = $em_event;
-									break;
+					// Filter events by category if not "all"
+					if ( $current_category !== 'all' ) {
+						$filtered_events = array();
+						foreach ( $all_events as $em_event ) {
+							$categories = get_the_terms( $em_event->post_id, 'event-categories' );
+							if ( $categories && ! is_wp_error( $categories ) ) {
+								foreach ( $categories as $cat ) {
+									if ( $cat->slug === $current_category ) {
+										$filtered_events[] = $em_event;
+										break;
+									}
 								}
 							}
 						}
+						$all_events = $filtered_events;
 					}
-					$all_events = $filtered_events;
 				}
 
 				// Filter events by venue if selected
@@ -412,10 +475,12 @@ $venues = get_posts( array(
 					}
 				}
 
-				// Merge regular classes if enabled
+				// Merge regular classes if on "Classes" view
 				$total_week_classes = 0;
-				if ( $show_classes ) {
-					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end, $current_category, $current_venue );
+				if ( $current_view === 'classes' ) {
+					// On Classes view, filter by category if selected
+					$class_category_filter = ( $current_category !== 'all' ) ? $current_category : 'all';
+					$regular_classes = northam_get_regular_classes_for_week( $week_start, $week_end, $class_category_filter, $current_venue );
 					// DEBUG: Output what we got
 					echo '<!-- DEBUG: regular_classes count = ' . count($regular_classes) . ' -->';
 					echo '<!-- DEBUG: regular_classes = ' . esc_html(print_r($regular_classes, true)) . ' -->';
@@ -467,7 +532,7 @@ $venues = get_posts( array(
 								if ( $total_week_events > 0 ) {
 									$count_parts[] = $total_week_events . ' event' . ( $total_week_events !== 1 ? 's' : '' );
 								}
-								if ( $show_classes && $total_week_classes > 0 ) {
+								if ( $current_view === 'classes' && $total_week_classes > 0 ) {
 									$count_parts[] = $total_week_classes . ' class' . ( $total_week_classes !== 1 ? 'es' : '' );
 								}
 								echo ! empty( $count_parts ) ? implode( ', ', $count_parts ) . ' this week' : 'No events this week';

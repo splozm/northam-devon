@@ -372,8 +372,11 @@ while ( have_posts() ) :
 					<div class="northam-events-grid-small">
 						<?php foreach ( $events as $event ) :
 							$event_map_url = get_post_meta( $event->post_id, '_northam_event_map_url', true );
+							$event_post = get_post( $event->post_id );
+							$event_slug = $event_post ? $event_post->post_name : '';
+							$event_detail_url = $event_slug ? add_query_arg( 'e', $event_slug, home_url( '/events-calendar/' ) ) : '#';
 						?>
-							<div class="northam-event-card-small">
+							<a href="<?php echo esc_url( $event_detail_url ); ?>" class="northam-event-card-small northam-event-card-link">
 								<div class="northam-event-card-image">
 									<?php if ( has_post_thumbnail( $event->post_id ) ) : ?>
 										<?php echo get_the_post_thumbnail( $event->post_id, 'thumbnail' ); ?>
@@ -388,16 +391,16 @@ while ( have_posts() ) :
 										at <?php echo esc_html( date_i18n( 'g:i A', strtotime( $event->event_start_time ) ) ); ?>
 									</p>
 									<?php if ( $event_map_url ) : ?>
-										<a href="<?php echo esc_url( $event_map_url ); ?>" target="_blank" rel="noopener noreferrer" class="northam-map-link northam-map-link-small">
+										<span class="northam-map-link northam-map-link-small" onclick="event.preventDefault(); event.stopPropagation(); window.open('<?php echo esc_url( $event_map_url ); ?>', '_blank');">
 											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 												<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
 												<circle cx="12" cy="10" r="3"></circle>
 											</svg>
 											View on Map
-										</a>
+										</span>
 									<?php endif; ?>
 								</div>
-							</div>
+							</a>
 						<?php endforeach; ?>
 					</div>
 				</div>
