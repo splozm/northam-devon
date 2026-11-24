@@ -40,7 +40,21 @@
     /* Event category colours - Vibrant */
     --event-venue: 175 55% 38%;
     --event-business: 50 70% 45%;
-    --event-community: 15 80% 55%;
+    --event-community: 210 75% 48%;
+    --event-community-soft: 210 80% 94%;
+    --event-community-foreground: 210 70% 32%;
+    --event-kids: 38 92% 50%;
+    --event-kids-soft: 43 96% 92%;
+    --event-kids-foreground: 32 85% 28%;
+    --event-active: 158 64% 40%;
+    --event-active-soft: 152 55% 92%;
+    --event-active-foreground: 160 70% 25%;
+    --event-food: 24 88% 55%;
+    --event-food-soft: 28 95% 92%;
+    --event-food-foreground: 20 80% 32%;
+    --event-arts: 270 65% 58%;
+    --event-arts-soft: 270 75% 95%;
+    --event-arts-foreground: 270 55% 38%;
 
     /* Custom Northam tokens - Vibrant Devon */
     --coastal-deep: 180 55% 30%;

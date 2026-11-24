@@ -76,7 +76,31 @@ export default {
         event: {
           venue: "hsl(var(--event-venue))",
           business: "hsl(var(--event-business))",
-          community: "hsl(var(--event-community))",
+          community: {
+            DEFAULT: "hsl(var(--event-community))",
+            soft: "hsl(var(--event-community-soft))",
+            foreground: "hsl(var(--event-community-foreground))",
+          },
+          kids: {
+            DEFAULT: "hsl(var(--event-kids))",
+            soft: "hsl(var(--event-kids-soft))",
+            foreground: "hsl(var(--event-kids-foreground))",
+          },
+          active: {
+            DEFAULT: "hsl(var(--event-active))",
+            soft: "hsl(var(--event-active-soft))",
+            foreground: "hsl(var(--event-active-foreground))",
+          },
+          food: {
+            DEFAULT: "hsl(var(--event-food))",
+            soft: "hsl(var(--event-food-soft))",
+            foreground: "hsl(var(--event-food-foreground))",
+          },
+          arts: {
+            DEFAULT: "hsl(var(--event-arts))",
+            soft: "hsl(var(--event-arts-soft))",
+            foreground: "hsl(var(--event-arts-foreground))",
+          },
         },
       },
       borderRadius: {

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Events from "./pages/Events";
 import EventsV2 from "./pages/EventsV2";
+import EventsV3 from "./pages/EventsV3";
 import Directory from "./pages/Directory";
 import ThingsToDo from "./pages/ThingsToDo";
 import Community from "./pages/Community";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events-v2" element={<EventsV2 />} />
+          <Route path="/events-v3" element={<EventsV3 />} />
           <Route path="/directory" element={<Directory />} />
           <Route path="/business/:slug" element={<BusinessPage />} />
           <Route path="/local-services" element={<LocalServices />} />
