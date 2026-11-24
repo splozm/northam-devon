@@ -1633,20 +1633,22 @@ a.northam-listing-card-link:focus {
 }
 
 /* Filters Bar */
-.northam-filters-bar {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  background-color: var(--northam-card);
-  border-bottom: 1px solid var(--northam-border);
-  box-shadow: var(--northam-shadow-sm);
-  padding: 1rem 0;
-}
-
-.northam-filters-form {
+/* Calendar Filters (Inside Green Calendar Section) */
+.northam-calendar-filters {
+  padding: 1.5rem 1rem;
+  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .northam-calendar-filters {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 }
 
 /* ==========================================================================
@@ -4309,13 +4311,7 @@ span[class*="dashicons"],
   color: var(--northam-muted-foreground);
 }
 
-/* Venue Filter Dropdown (shown on both mobile and desktop) */
-.northam-venue-filter-row {
-  display: flex;
-  justify-content: center;
-  padding-top: 0.75rem;
-}
-
+/* Venue Filter Dropdown (inline in calendar filters) */
 .northam-venue-dropdown {
   position: relative;
   width: 100%;
@@ -4367,10 +4363,6 @@ span[class*="dashicons"],
 
   .northam-filter-mobile-dropdown {
     display: block;
-  }
-
-  .northam-filters-form {
-    position: relative;
   }
 }
 

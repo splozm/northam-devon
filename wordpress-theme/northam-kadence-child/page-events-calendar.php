@@ -96,119 +96,35 @@ $venues = get_posts( array(
 		</div>
 	</div>
 
-	<!-- Filters Bar -->
-	<div class="northam-filters-bar">
-		<div class="northam-container">
-			<div class="northam-filters-form">
-				<?php
-				// Helper to build filter URL preserving other params
-				function northam_filter_url( $category = null, $venue = null ) {
-					$params = array();
+	<?php
+	// Helper functions for filter URLs
+	function northam_filter_url( $category = null, $venue = null ) {
+		$params = array();
+		if ( isset( $_GET['view'] ) ) {
+			$params['view'] = sanitize_text_field( $_GET['view'] );
+		}
+		if ( $category !== null ) {
+			$params['category'] = $category;
+		} elseif ( isset( $_GET['category'] ) ) {
+			$params['category'] = sanitize_text_field( $_GET['category'] );
+		}
+		if ( $venue !== null ) {
+			if ( $venue > 0 ) {
+				$params['venue'] = $venue;
+			}
+		} elseif ( isset( $_GET['venue'] ) && absint( $_GET['venue'] ) > 0 ) {
+			$params['venue'] = absint( $_GET['venue'] );
+		}
+		if ( isset( $_GET['week'] ) ) {
+			$params['week'] = intval( $_GET['week'] );
+		}
+		return add_query_arg( $params, remove_query_arg( array( 'view', 'category', 'venue', 'week' ) ) );
+	}
 
-					// Preserve view
-					if ( isset( $_GET['view'] ) ) {
-						$params['view'] = sanitize_text_field( $_GET['view'] );
-					}
-
-					// Set category (use current if not specified)
-					if ( $category !== null ) {
-						$params['category'] = $category;
-					} elseif ( isset( $_GET['category'] ) ) {
-						$params['category'] = sanitize_text_field( $_GET['category'] );
-					}
-
-					// Set venue (use current if not specified)
-					if ( $venue !== null ) {
-						if ( $venue > 0 ) {
-							$params['venue'] = $venue;
-						}
-						// If venue is 0, don't add it (means "all venues")
-					} elseif ( isset( $_GET['venue'] ) && absint( $_GET['venue'] ) > 0 ) {
-						$params['venue'] = absint( $_GET['venue'] );
-					}
-
-					// Preserve week offset if set
-					if ( isset( $_GET['week'] ) ) {
-						$params['week'] = intval( $_GET['week'] );
-					}
-
-					return add_query_arg( $params, remove_query_arg( array( 'view', 'category', 'venue', 'week' ) ) );
-				}
-
-				// Helper for venue-only URL changes
-				function northam_venue_url( $venue_id ) {
-					return northam_filter_url( null, $venue_id );
-				}
-
-				// Category options for both desktop and mobile
-				$categories = array(
-					'all'              => array( 'label' => 'All categories', 'class' => '' ),
-					'kids-family'      => array( 'label' => 'Kids & Family', 'class' => 'northam-filter-kids' ),
-					'active-outdoors'  => array( 'label' => 'Active & Outdoors', 'class' => 'northam-filter-active' ),
-					'food-drink'       => array( 'label' => 'Food & Drink', 'class' => 'northam-filter-food' ),
-					'arts-culture'     => array( 'label' => 'Arts & Culture', 'class' => 'northam-filter-arts' ),
-					'community-social' => array( 'label' => 'Community & Social', 'class' => 'northam-filter-community' ),
-				);
-				?>
-
-				<!-- Mobile Category Dropdown -->
-				<div class="northam-filter-mobile-dropdown">
-					<select id="northam-category-select" class="northam-category-select" aria-label="Filter by category">
-						<?php foreach ( $categories as $slug => $cat ) : ?>
-							<option value="<?php echo esc_attr( northam_filter_url( $slug ) ); ?>" <?php selected( $current_category, $slug ); ?>>
-								<?php echo esc_html( $cat['label'] ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-					<svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="6 9 12 15 18 9"></polyline>
-					</svg>
-				</div>
-
-				<!-- Desktop Category Filters -->
-				<div class="northam-category-filters northam-category-filters-center">
-					<?php foreach ( $categories as $slug => $cat ) : ?>
-						<a href="<?php echo esc_url( northam_filter_url( $slug ) ); ?>"
-						   class="northam-filter-btn <?php echo esc_attr( $cat['class'] ); ?> <?php echo $current_category === $slug ? 'active' : ''; ?>">
-							<?php if ( $slug !== 'all' ) : ?>
-								<span class="filter-dot"></span>
-							<?php endif; ?>
-							<?php echo esc_html( $cat['label'] ); ?>
-						</a>
-					<?php endforeach; ?>
-				</div>
-			</div>
-
-			<?php if ( ! empty( $venues ) && $current_view === 'classes' ) : ?>
-			<!-- Venue Filter (Classes View Only) -->
-			<div class="northam-venue-filter-row">
-				<div class="northam-venue-dropdown">
-					<select id="northam-venue-select" class="northam-venue-select" aria-label="Filter by venue">
-						<option value="<?php echo esc_attr( northam_venue_url( 0 ) ); ?>" <?php selected( $current_venue, 0 ); ?>>
-							All Venues
-						</option>
-						<?php foreach ( $venues as $venue ) : ?>
-							<option value="<?php echo esc_attr( northam_venue_url( $venue->ID ) ); ?>" <?php selected( $current_venue, $venue->ID ); ?>>
-								<?php echo esc_html( $venue->post_title ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
-					</div>
-			</div>
-			<?php endif; ?>
-		</div>
-	</div>
-
-	<script>
-	document.getElementById('northam-category-select').addEventListener('change', function() {
-		window.location.href = this.value;
-	});
-	<?php if ( ! empty( $venues ) && $current_view === 'classes' ) : ?>
-	document.getElementById('northam-venue-select').addEventListener('change', function() {
-		window.location.href = this.value;
-	});
-	<?php endif; ?>
-	</script>
+	function northam_venue_url( $venue_id ) {
+		return northam_filter_url( null, $venue_id );
+	}
+	?>
 
 	<!-- Events Content -->
 	<div class="northam-archive-content" style="padding-top: 3rem; padding-bottom: 3rem;">
@@ -563,6 +479,67 @@ $venues = get_posts( array(
 							</svg>
 						</a>
 					</div>
+				</div>
+
+				<!-- Category Filters (Moved Inside Calendar) -->
+				<div class="northam-calendar-filters">
+					<?php
+					// Category options
+					$categories = array(
+						'all'              => array( 'label' => 'All categories', 'class' => '' ),
+						'kids-family'      => array( 'label' => 'Kids & Family', 'class' => 'northam-filter-kids' ),
+						'active-outdoors'  => array( 'label' => 'Active & Outdoors', 'class' => 'northam-filter-active' ),
+						'food-drink'       => array( 'label' => 'Food & Drink', 'class' => 'northam-filter-food' ),
+						'arts-culture'     => array( 'label' => 'Arts & Culture', 'class' => 'northam-filter-arts' ),
+						'community-social' => array( 'label' => 'Community & Social', 'class' => 'northam-filter-community' ),
+					);
+					?>
+
+					<!-- Mobile Category Dropdown -->
+					<div class="northam-filter-mobile-dropdown">
+						<select id="northam-category-select" class="northam-category-select" aria-label="Filter by category">
+							<?php foreach ( $categories as $slug => $cat ) : ?>
+								<option value="<?php echo esc_url( northam_filter_url( $slug ) ); ?>" <?php selected( $current_category, $slug ); ?>>
+									<?php echo esc_html( $cat['label'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="6 9 12 15 18 9"></polyline>
+						</svg>
+					</div>
+
+					<!-- Desktop Category Filters -->
+					<div class="northam-category-filters">
+						<?php foreach ( $categories as $slug => $cat ) : ?>
+							<a href="<?php echo esc_url( northam_filter_url( $slug ) ); ?>"
+							   class="northam-filter-btn <?php echo esc_attr( $cat['class'] ); ?> <?php echo $current_category === $slug ? 'active' : ''; ?>">
+								<?php if ( $slug !== 'all' ) : ?>
+									<span class="filter-dot"></span>
+								<?php endif; ?>
+								<?php echo esc_html( $cat['label'] ); ?>
+							</a>
+						<?php endforeach; ?>
+					</div>
+
+					<?php if ( ! empty( $venues ) && $current_view === 'classes' ) : ?>
+					<!-- Venue Filter -->
+					<div class="northam-venue-dropdown">
+						<select id="northam-venue-select-inline" class="northam-venue-select" aria-label="Filter by venue">
+							<option value="<?php echo esc_attr( northam_venue_url( 0 ) ); ?>" <?php selected( $current_venue, 0 ); ?>>
+								All Venues
+							</option>
+							<?php foreach ( $venues as $venue ) : ?>
+								<option value="<?php echo esc_attr( northam_venue_url( $venue->ID ) ); ?>" <?php selected( $current_venue, $venue->ID ); ?>>
+									<?php echo esc_html( $venue->post_title ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+						<svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="6 9 12 15 18 9"></polyline>
+						</svg>
+					</div>
+					<?php endif; ?>
 				</div>
 
 				<!-- Desktop: Calendar Grid -->
@@ -1070,5 +1047,16 @@ wp_enqueue_script(
 	true
 );
 ?>
+
+<script>
+document.getElementById('northam-category-select').addEventListener('change', function() {
+	window.location.href = this.value;
+});
+<?php if ( ! empty( $venues ) && $current_view === 'classes' ) : ?>
+document.getElementById('northam-venue-select-inline').addEventListener('change', function() {
+	window.location.href = this.value;
+});
+<?php endif; ?>
+</script>
 
 <?php get_footer(); ?>
