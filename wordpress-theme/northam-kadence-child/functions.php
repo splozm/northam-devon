@@ -337,10 +337,10 @@ function northam_enqueue_styles() {
     // Mark as module type
     add_filter( 'script_loader_tag', 'northam_add_module_to_instant_page', 10, 2 );
 
-    // View Transitions scroll position helper
+    // Calendar AJAX navigation - smooth transitions for events calendar
     wp_enqueue_script(
-        'northam-view-transitions',
-        get_stylesheet_directory_uri() . '/assets/js/view-transitions.js',
+        'northam-calendar-ajax',
+        get_stylesheet_directory_uri() . '/assets/js/calendar-ajax.js',
         array(),
         NORTHAM_VERSION,
         true
