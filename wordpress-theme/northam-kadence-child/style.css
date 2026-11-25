@@ -5786,3 +5786,79 @@ span[class*="dashicons"],
     font-size: var(--northam-text-base);
   }
 }
+
+/* ==========================================================================
+   Christmas in Northam (homepage, seasonal — remove after Christmas 2026)
+   ========================================================================== */
+.northam-xmas {
+  background-color: hsl(15, 85%, 97%);
+}
+
+.northam-xmas-eyebrow {
+  color: hsl(355, 70%, 45%);
+}
+
+.northam-xmas-banner {
+  display: block;
+  margin-bottom: 1.5rem;
+  border-radius: var(--northam-radius-xl);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.northam-xmas-banner img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.northam-xmas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.northam-xmas-event {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem;
+  background: var(--northam-card);
+  border: 1px solid hsl(15, 50%, 90%);
+  border-top: 4px solid hsl(355, 70%, 50%);
+  border-radius: var(--northam-radius-lg);
+  color: var(--northam-foreground);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.northam-xmas-event:hover,
+.northam-xmas-event:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  color: var(--northam-foreground);
+}
+
+.northam-xmas-when {
+  font-size: var(--northam-text-sm);
+  font-weight: 700;
+  color: hsl(355, 70%, 42%);
+}
+
+.northam-xmas-name {
+  font-family: var(--northam-font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.northam-xmas-where {
+  font-size: var(--northam-text-sm);
+  color: var(--northam-muted-foreground);
+}
+
+@media (prefers-color-scheme: dark) {
+  .northam-xmas { background-color: hsl(15, 30%, 12%); }
+  .northam-xmas-event { border-color: hsl(15, 30%, 25%); border-top-color: hsl(355, 60%, 55%); }
+  .northam-xmas-eyebrow, .northam-xmas-when { color: hsl(355, 60%, 65%); }
+}

@@ -54,6 +54,83 @@ get_header();
     </div>
 </section>
 
+<?php
+/*
+ * Christmas in Northam section.
+ * - Whole section shows until 26 Dec 2026.
+ * - Banner image shows until 12 Dec 2026, and only once it has been uploaded to
+ *   the Media Library in November 2026 as christmas-in-northam-banner.png.
+ * - Event list is pulled live from the "christmas" event category.
+ */
+$northam_today = current_time( 'Y-m-d' );
+if ( $northam_today <= '2026-12-26' && class_exists( 'EM_Events' ) ) :
+    $xmas_term   = get_term_by( 'slug', 'christmas', 'event-categories' );
+    $xmas_events = $xmas_term ? EM_Events::get( array(
+        'limit'    => 4,
+        'scope'    => 'future',
+        'category' => $xmas_term->term_id,
+        'orderby'  => 'event_start',
+        'order'    => 'ASC',
+    ) ) : array();
+
+    $uploads         = wp_get_upload_dir();
+    $banner_rel      = '/2026/11/christmas-in-northam-banner.png';
+    $show_banner     = $northam_today <= '2026-12-12' && file_exists( $uploads['basedir'] . $banner_rel );
+    $xmas_events_url = add_query_arg( array( 'view' => 'events', 'category' => 'christmas' ), home_url( '/events/' ) );
+
+    if ( $show_banner || ! empty( $xmas_events ) ) : ?>
+<!-- Christmas in Northam Section -->
+<section class="northam-section northam-xmas">
+    <div class="northam-container">
+        <div class="northam-section-header">
+            <div>
+                <span class="northam-section-eyebrow northam-xmas-eyebrow">Seasonal</span>
+                <h2 class="northam-section-title">Christmas in Northam</h2>
+            </div>
+            <a href="<?php echo esc_url( $xmas_events_url ); ?>" class="northam-btn northam-btn-outline">
+                See all Christmas events
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </a>
+        </div>
+
+        <?php if ( $show_banner ) : ?>
+            <a href="<?php echo esc_url( $xmas_events_url ); ?>" class="northam-xmas-banner">
+                <img src="<?php echo esc_url( $uploads['baseurl'] . $banner_rel ); ?>"
+                     alt="Christmas in Northam, Saturday 12 December 2026: Farmers Market &amp; Makers Market 10am–2pm, Children’s Christmas Workshop 12–2pm, Elke Lucas Ceramics Open Studio 2–5pm, Civic Carol Service &amp; Father Christmas 3pm"
+                     width="2400" height="800" loading="lazy">
+            </a>
+        <?php endif; ?>
+
+        <?php if ( ! empty( $xmas_events ) ) : ?>
+            <div class="northam-xmas-grid">
+                <?php foreach ( $xmas_events as $event ) :
+                    $venue_id   = (int) get_post_meta( $event->post_id, '_northam_event_venue', true );
+                    $venue_name = $venue_id ? get_the_title( $venue_id ) : '';
+                    $start      = strtotime( $event->event_start_date );
+                    $end        = strtotime( $event->event_end_date );
+                    $date_label = ( $end && $end > $start )
+                        ? date_i18n( 'j M', $start ) . ' – ' . date_i18n( 'j M', $end )
+                        : date_i18n( 'D j M', $start );
+                    $time_label = $event->event_all_day ? 'All day' : date_i18n( 'g:ia', strtotime( $event->event_start_time ) );
+                ?>
+                    <a href="<?php echo esc_url( $event->get_permalink() ); ?>" class="northam-xmas-event">
+                        <span class="northam-xmas-when"><?php echo esc_html( $date_label . ' · ' . $time_label ); ?></span>
+                        <span class="northam-xmas-name"><?php echo esc_html( $event->event_name ); ?></span>
+                        <?php if ( $venue_name ) : ?>
+                            <span class="northam-xmas-where"><?php echo esc_html( $venue_name ); ?></span>
+                        <?php endif; ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+    <?php endif;
+endif; ?>
+
 <!-- Quick Stats Section -->
 <section class="northam-section-sm" style="background-color: var(--northam-sand-warm); background-color: hsl(45, 55%, 80%, 0.5);">
     <div class="northam-container">

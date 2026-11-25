@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.3.6' );
+define( 'NORTHAM_VERSION', '1.3.7' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
