@@ -137,6 +137,43 @@ Northam - Where Community Meets Coast
 }
 
 /* ==========================================================================
+   VIEW TRANSITIONS API - Smooth Page Transitions
+   Progressive enhancement for Chrome/Edge - graceful fallback for others
+   ========================================================================== */
+
+@view-transition {
+  navigation: auto;
+}
+
+/* Customize transition timing */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: ease-in-out;
+}
+
+/* Smooth crossfade effect */
+::view-transition-old(root) {
+  animation-name: fade-out;
+}
+
+::view-transition-new(root) {
+  animation-name: fade-in;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
    KADENCE HEADER STYLING - Match Original Lovable Design
    White background, dark text, teal accents, icons in nav
    ========================================================================== */

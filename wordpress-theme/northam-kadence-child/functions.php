@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Theme version
-define( 'NORTHAM_VERSION', '1.3.5' );
+define( 'NORTHAM_VERSION', '1.3.6' );
 define( 'NORTHAM_THEME_DIR', get_stylesheet_directory() );
 define( 'NORTHAM_THEME_URI', get_stylesheet_directory_uri() );
 
@@ -326,8 +326,38 @@ function northam_enqueue_styles() {
         null
     );
 
+    // instant.page - Prefetch links on hover/touch for faster page loads
+    wp_enqueue_script(
+        'instant-page',
+        'https://instant.page/5.2.0',
+        array(),
+        '5.2.0',
+        true
+    );
+    // Mark as module type
+    add_filter( 'script_loader_tag', 'northam_add_module_to_instant_page', 10, 2 );
+
+    // View Transitions scroll position helper
+    wp_enqueue_script(
+        'northam-view-transitions',
+        get_stylesheet_directory_uri() . '/assets/js/view-transitions.js',
+        array(),
+        NORTHAM_VERSION,
+        true
+    );
+
 }
 add_action( 'wp_enqueue_scripts', 'northam_enqueue_styles', 20 );
+
+/**
+ * Add type="module" to instant.page script
+ */
+function northam_add_module_to_instant_page( $tag, $handle ) {
+    if ( 'instant-page' === $handle ) {
+        $tag = str_replace( ' src', ' type="module" src', $tag );
+    }
+    return $tag;
+}
 
 /**
  * Enqueue admin styles for meta boxes
